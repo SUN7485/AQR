@@ -110,6 +110,32 @@ function strip(source) {
 
 const count = (s, re) => (s.match(re) ?? []).length;
 
+/**
+ * Split Swift source into top-level declarations.
+ *
+ * Needed because several checks must be scoped to a single type: a sibling
+ * type in the same file must not satisfy (or trip) another type's rules.
+ */
+function topLevelBlocks(source) {
+  const lines = source.split(/\r?\n/);
+  const starts = [];
+  lines.forEach((line, i) => {
+    if (/^(?:public |internal |private |fileprivate |final |indirect )*(?:struct|class|enum|actor|extension)\b/.test(line)) {
+      starts.push(i);
+    }
+  });
+  if (starts.length === 0) return [{ text: source, lines, offset: 0 }];
+
+  return starts.map((start, idx) => {
+    const end = idx + 1 < starts.length ? starts[idx + 1] : lines.length;
+    return {
+      text: lines.slice(start, end).join('\n'),
+      lines: lines.slice(start, end),
+      offset: start,
+    };
+  });
+}
+
 console.log(`swift-lint  ${path.relative(ROOT, SOURCE_DIR)}  (${files.length} files)\n`);
 
 for (const file of files) {
@@ -164,6 +190,34 @@ for (const file of files) {
       if (re.test(line) && !gated[n] && !isGateFile) fail(file, n + 1, msg);
     }
   });
+
+  /* 4. $ projection on an @Environment @Observable.
+   *
+   * `@Environment(Type.self) private var store` yields no `$store`, so
+   * projecting one is a compile error rather than a warning.
+   *
+   * Checked per top-level type, not per file: the escape hatch is
+   * `@Bindable var store = store` inside body, and a sibling type's copy of
+   * that must not mask this type's mistake. Matched by declared name rather
+   * than by pattern, because a bare `$\w+\.` also matches string interpolation
+   * and key paths and yields false positives.
+   */
+  for (const block of topLevelBlocks(source)) {
+    const envNames = [...block.text.matchAll(
+      /@Environment\(\s*\w[\w.]*\.self\s*\)\s*(?:private\s+)?var\s+(\w+)/g
+    )].map(m => m[1]);
+
+    for (const name of envNames) {
+      if (new RegExp(`@Bindable\\s+(?:var|let)\\s+${name}\\b`).test(block.text)) continue;
+      const projection = new RegExp(`\\$${name}\\b`);
+      block.lines.forEach((line, i) => {
+        if (projection.test(line)) {
+          fail(file, block.offset + i + 1,
+            `$${name} on an @Environment @Observable — add \`@Bindable var ${name} = ${name}\` in body first`);
+        }
+      });
+    }
+  }
 }
 
 if (problems === 0) {

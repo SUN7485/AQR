@@ -5,6 +5,10 @@ struct AssetsView: View {
     @Environment(AppRouter.self) private var router
 
     var body: some View {
+        // `@Environment` gives no `$` projection for an @Observable, so bind it
+        // locally before projecting.
+        @Bindable var router = router
+
         NavigationStack(path: $router.assetsPath) {
             ScrollView {
                 LazyVStack(spacing: Metric.m) {

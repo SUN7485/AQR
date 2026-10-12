@@ -5,6 +5,10 @@ struct RootTabView: View {
     @State private var router = AppRouter()
 
     var body: some View {
+        // `@Environment` gives no `$` projection for an @Observable, so bind it
+        // locally before projecting.
+        @Bindable var router = router
+
         TabView(selection: $router.tab) {
             ForEach(AppTab.allCases) { tab in
                 SwiftUI.Tab(tab.title, systemImage: tab.systemImage, value: tab) {
