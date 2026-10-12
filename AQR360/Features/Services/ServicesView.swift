@@ -13,7 +13,7 @@ struct ServicesView: View {
                     catalogueSection
                 }
                 .padding(.horizontal, Metric.l)
-                .padding(.bottom, Metric.xl)
+                .padding(.bottom, Metric.scrollBottomInset)
             }
             .background(Brand.canvas)
             .navigationTitle("Services")
@@ -132,7 +132,7 @@ private struct ServiceRow: View {
                             .foregroundStyle(.secondary)
                             .multilineTextAlignment(.leading)
                         HStack(spacing: Metric.m) {
-                            Text("From \(offering.startingPrice.formatted(.currency(code: "USD")))")
+                            Text("From \(offering.startingPrice.moneyLabel)")
                                 .font(.caption.weight(.medium))
                                 .foregroundStyle(Brand.primary)
                             Label("\(offering.turnaroundDays)d", systemImage: "clock")
@@ -165,7 +165,7 @@ private struct BookServiceSheet: View {
             Form {
                 Section("Service") {
                     LabeledContent("Provider", value: offering.name)
-                    LabeledContent("Starting at", value: offering.startingPrice.formatted(.currency(code: "USD")))
+                    LabeledContent("Starting at", value: offering.startingPrice.moneyLabel)
                     LabeledContent("Turnaround", value: "\(offering.turnaroundDays) days")
                 }
 

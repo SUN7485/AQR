@@ -61,6 +61,9 @@ final class AppStore {
 
     // MARK: - Derived
 
+    /// Given name for greetings.
+    var firstName: String { account.name.firstName }
+
     var proAssets: [Asset] { assets.filter(\.isProSubscribed) }
 
     var filteredListings: [Listing] {
@@ -80,7 +83,7 @@ final class AppStore {
     }
 
     var totalMonthlyNetLabel: String {
-        totalMonthlyNet.formatted(.currency(code: "USD"))
+        totalMonthlyNet.moneyLabel
     }
 
     var openTicketCount: Int {

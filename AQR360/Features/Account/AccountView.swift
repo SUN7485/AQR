@@ -59,10 +59,7 @@ struct AccountView: View {
     }
 
     private var initials: String {
-        store.account.name.split(separator: " ")
-            .prefix(2)
-            .compactMap { $0.first.map(String.init) }
-            .joined()
+        store.account.name.initials
     }
 }
 

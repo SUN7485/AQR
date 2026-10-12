@@ -15,7 +15,7 @@ struct AssetsView: View {
                     }
                 }
                 .padding(.horizontal, Metric.l)
-                .padding(.bottom, Metric.xl)
+                .padding(.bottom, Metric.scrollBottomInset)
             }
             .background(Brand.canvas)
             .navigationTitle("My Assets")

@@ -68,7 +68,7 @@ struct AssetWorkspaceView: View {
                 }
             }
             .padding(.horizontal, Metric.l)
-            .padding(.bottom, Metric.xl)
+            .padding(.bottom, Metric.scrollBottomInset)
         }
         .background(Brand.canvas)
         .navigationTitle(asset.name)
@@ -102,9 +102,9 @@ struct AssetWorkspaceView: View {
         VStack(alignment: .leading, spacing: Metric.m) {
             AQSectionHeader("Performance", subtitle: "Current month")
             HStack(spacing: Metric.m) {
-                AQStat(value: asset.monthlyIncome.formatted(.currency(code: "USD")),
+                AQStat(value: asset.monthlyIncome.moneyLabel,
                        label: "Income", systemImage: "arrow.down", tone: .success)
-                AQStat(value: asset.monthlyExpenses.formatted(.currency(code: "USD")),
+                AQStat(value: asset.monthlyExpenses.moneyLabel,
                        label: "Expenses", systemImage: "arrow.up", tone: .danger)
                 AQStat(value: asset.netMonthlyLabel, label: "Net", systemImage: "equal", tone: .accent)
             }

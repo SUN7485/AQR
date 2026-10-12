@@ -45,7 +45,7 @@ private struct ContractRow: View {
             VStack(alignment: .trailing, spacing: 2) {
                 AQBadge(text: statusLabel, tone: tone)
                 if contract.deposit > 0 {
-                    Text("Deposit \(contract.deposit.formatted(.currency(code: "USD")))")
+                    Text("Deposit \(contract.deposit.moneyLabel)")
                         .font(.caption2)
                         .foregroundStyle(.tertiary)
                 }

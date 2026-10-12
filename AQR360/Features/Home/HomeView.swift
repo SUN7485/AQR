@@ -15,7 +15,7 @@ struct HomeView: View {
                     careCard
                 }
                 .padding(.horizontal, Metric.l)
-                .padding(.bottom, Metric.xl)
+                .padding(.bottom, Metric.scrollBottomInset)
             }
             .background(Brand.canvas)
             .navigationTitle("AQR360")
@@ -29,7 +29,7 @@ struct HomeView: View {
     private var header: some View {
         AQHeroHeader(
             eyebrow: "Good day",
-            title: "\(store.account.name.split(separator: " ").first.map(String.init) ?? "there")"
+            title: store.firstName
         )
         .padding(.horizontal, Metric.l)
         .padding(.top, Metric.s)

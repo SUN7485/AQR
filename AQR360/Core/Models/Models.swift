@@ -18,9 +18,7 @@ struct Listing: Identifiable, Hashable, Sendable {
     let badge: String?
 
     var priceLabel: String {
-        let formatter = Decimal.FormatStyle.Currency(code: "USD")
-        let base = price.formatted(formatter)
-        return period == .once ? base : base + "/mo"
+        period == .once ? price.moneyLabel : price.moneyLabel + "/mo"
     }
 
     var specSummary: String {
@@ -70,7 +68,7 @@ struct Asset: Identifiable, Hashable, Sendable {
     var netMonthly: Decimal { monthlyIncome - monthlyExpenses }
 
     var netMonthlyLabel: String {
-        netMonthly.formatted(.currency(code: "USD"))
+        netMonthly.moneyLabel
     }
 
     var occupancyLabel: String {
@@ -88,12 +86,7 @@ struct Tenant: Identifiable, Hashable, Sendable {
     let leaseEnd: Date
     let isCurrent: Bool
 
-    var initials: String {
-        name.split(separator: " ")
-            .prefix(2)
-            .compactMap { $0.first.map(String.init) }
-            .joined()
-    }
+    var initials: String { name.initials }
 }
 
 // MARK: - Contract

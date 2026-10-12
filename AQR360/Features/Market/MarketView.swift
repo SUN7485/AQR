@@ -22,7 +22,7 @@ struct MarketView: View {
                             }
                         }
                         .padding(.horizontal, Metric.l)
-                        .padding(.bottom, Metric.xl)
+                        .padding(.bottom, Metric.scrollBottomInset)
                     }
                     .background(Brand.canvas)
                 }
@@ -204,7 +204,7 @@ struct ListingDetailView: View {
                 }
             }
             .padding(.horizontal, Metric.l)
-            .padding(.bottom, Metric.xl)
+            .padding(.bottom, Metric.scrollBottomInset)
         }
         .background(Brand.canvas)
         .navigationTitle(listing.title)

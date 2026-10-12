@@ -62,4 +62,11 @@ enum Metric {
     static let cardRadius: CGFloat = 18
     static let chipRadius: CGFloat = 10
     static let sheetRadius: CGFloat = 28
+
+    /// Bottom inset for scrolling content inside a tab.
+    ///
+    /// The tab bar floats over the scroll view rather than compressing it, so
+    /// `Metric.xl` alone leaves the last card half-hidden. This clears the bar
+    /// plus the home indicator.
+    static let scrollBottomInset: CGFloat = 96
 }

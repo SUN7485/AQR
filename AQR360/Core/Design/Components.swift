@@ -81,6 +81,8 @@ struct AQStat: View {
             Text(value)
                 .font(.title2.weight(.bold))
                 .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.55)
                 .contentTransition(.numericText())
             Text(label)
                 .font(.caption)
