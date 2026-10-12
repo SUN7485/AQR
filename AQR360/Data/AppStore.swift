@@ -43,10 +43,19 @@ final class AppStore {
     var searchText = ""
     var selectedCategory: ListingCategory?
 
+    // MARK: - Dependencies
+
+    /// Read-only API client. Injected rather than constructed so previews and
+    /// tests never reach the network.
+    private let client: HTTPGet?
+
     // MARK: - Init
 
-    init(configuration: AppConfiguration = .verified) {
+    /// - Parameter client: pass `nil` to run entirely on fixtures, which is
+    ///   what previews do.
+    init(configuration: AppConfiguration = .verified, client: HTTPGet? = nil) {
         self.configuration = configuration
+        self.client = client
         self.account = Account(
             name: "Adaeze Nwosu",
             email: "adaeze@aqr360.com",
@@ -69,6 +78,49 @@ final class AppStore {
         services = SampleData.services()
         tickets = SampleData.tickets()
         isLoading = false
+
+        // Currency and country resolve from the live API once verified. Until
+        // that succeeds the compiled-in value stands. See Docs/API-FINDINGS.md.
+        await resolveConfiguration()
+    }
+
+    // MARK: - Live configuration
+
+    enum ConfigurationSource: String, Sendable {
+        /// Confirmed against the live API.
+        case live
+        /// The value compiled in from API-FINDINGS, used when the call fails.
+        case verifiedDefault
+    }
+
+    /// Where `configuration` came from. Surfaced so a fallback is visible rather
+    /// than silent.
+    private(set) var configurationSource: ConfigurationSource = .verifiedDefault
+
+    /// Populate currency and country from the public countries lookup.
+    ///
+    /// `/MetaLookup/countries` returns `currencyISO3` per country, which is
+    /// where AQR360's own `currency: "AED"` comes from. Verified: AE -> AED.
+    ///
+    /// Failure is non-fatal by design: the verified static default stays in
+    /// place and the UI keeps running on fixtures.
+    private func resolveConfiguration() async {
+        guard let client else { return }
+        do {
+            let envelope = try await client.get(
+                "MetaLookup/countries", as: APIEnvelope<[Country]>.self)
+            guard envelope.isSuccess,
+                  let country = envelope.data.first(where: { $0.countryId == configuration.countryCode }),
+                  country.hasCurrency,
+                  let currency = country.currencyISO3
+            else { return }
+            configuration = AppConfiguration(
+                currencyCode: currency,
+                countryCode: country.countryId)
+            configurationSource = .live
+        } catch {
+            configurationSource = .verifiedDefault
+        }
     }
 
     // MARK: - Derived

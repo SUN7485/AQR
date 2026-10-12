@@ -72,6 +72,32 @@ jobs:
           retention-days: 7
           if-no-files-found: error
 
+  test:
+    name: Unit tests
+    # Deliberately does NOT gate `screenshots` or the Pages deploy. A broken
+    # test target must not be able to take the review preview offline.
+    runs-on: macos-26
+    needs: lint
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Toolchain
+        run: xcodebuild -version
+
+      - name: List schemes
+        run: xcodebuild -list -project AQR360.xcodeproj
+
+      - name: Run tests
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project AQR360.xcodeproj \
+            -scheme AQR360 \
+            -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=latest' \
+            CODE_SIGNING_ALLOWED=NO \
+            | xcbeautify
+
   screenshots:
     name: Screenshots
     runs-on: macos-26

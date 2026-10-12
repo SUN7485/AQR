@@ -1,0 +1,21 @@
+{
+  "_comment": "Sanitized response samples captured from the live AQR360 API on 2026-10-12 via read-only GET. Used by decoding tests. Trimmed to the smallest sample that still exercises the decoder. No credentials, tokens or personal data are present.",
+  "endpoint": "/api/client/v1/MetaLookup/countries",
+  "status": 200,
+  "observedTopLevelKeys": ["data", "isSuccess", "errors", "responseTime", "responseStatus"],
+  "observedItemCount": 241,
+  "body": {
+    "data": [
+      { "countryId": "AE", "name": "United Arab Emirates", "currencyISO3": "AED", "isActive": true, "isBillingEnabled": true, "isStoreEnabled": true },
+      { "countryId": "NG", "name": "Nigeria", "currencyISO3": "NGN", "isActive": true, "isBillingEnabled": true, "isStoreEnabled": false },
+      { "countryId": "US", "name": "United States", "currencyISO3": "USD", "isActive": true, "isBillingEnabled": true, "isStoreEnabled": false },
+      { "countryId": "AX", "name": "Aaland Islands", "currencyISO3": "EUR", "isActive": true, "isBillingEnabled": true, "isStoreEnabled": false },
+      { "countryId": "ZZ", "name": "No Currency", "currencyISO3": "", "isActive": false, "isBillingEnabled": false, "isStoreEnabled": false },
+      { "countryId": "QN", "name": "Missing Currency Field", "isActive": true, "isBillingEnabled": false, "isStoreEnabled": false }
+    ],
+    "isSuccess": true,
+    "errors": [],
+    "responseTime": "2026-10-12T22:28:10.8514733Z",
+    "responseStatus": 200
+  }
+}
