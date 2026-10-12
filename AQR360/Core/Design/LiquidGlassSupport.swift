@@ -23,18 +23,30 @@ extension View {
     }
 
     /// Glass button style. Use `prominent: true` for the one primary action.
+    ///
+    /// Written as explicit branches rather than a ternary: a ternary over two
+    /// unrelated button styles collapses to the bare `ButtonStyle` protocol and
+    /// fails to infer `.bordered` / `.glass`.
     @ViewBuilder
     func aqGlassButtonStyle(prominent: Bool = false, tint: Color? = nil) -> some View {
         if #available(iOS 26, *) {
             if let tint {
-                self.buttonStyle(.glass(prominent ? .regular.tint(tint) : .clear))
+                if prominent {
+                    self.buttonStyle(.glass(.regular.tint(tint)))
+                } else {
+                    self.buttonStyle(.glass(.clear))
+                }
             } else if prominent {
                 self.buttonStyle(.glassProminent)
             } else {
                 self.buttonStyle(.glass)
             }
         } else {
-            self.buttonStyle(prominent ? .borderedProminent : .bordered)
+            if prominent {
+                self.buttonStyle(.borderedProminent)
+            } else {
+                self.buttonStyle(.bordered)
+            }
         }
     }
 }
