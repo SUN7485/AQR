@@ -1,0 +1,23 @@
+{
+  "project": "AQR360",
+  "platform": "ios",
+  "ios": {
+    "path": ".",
+    "scheme": "AQR360",
+    "bundleId": "com.aqr360.app",
+    "configuration": "Release"
+  },
+  "defaultProfile": "development",
+  "profiles": {
+    "development": {
+      "distribution": "development"
+    },
+    "preview": {
+      "distribution": "internal"
+    },
+    "production": {
+      "distribution": "store",
+      "scheme": "AQR360"
+    }
+  }
+}

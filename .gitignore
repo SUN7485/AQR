@@ -1,0 +1,36 @@
+# macOS
+.DS_Store
+
+# Xcode
+build/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+*.xcscmblueprint
+*.xccheckout
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Build artifacts from MobAI builder
+dist/
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# Signing material — never commit these
+*.p12
+*.mobileprovision
+*.cer
+ios-signing*.key
+
+# Secrets
+.env
+.env.*
+*.xcconfig.local
+
+# Agent skill working dirs are tracked; their scratch output is not
+.claude/settings.local.json

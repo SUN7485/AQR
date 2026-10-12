@@ -1,0 +1,13 @@
+{
+  "name": "aqr360-ios",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AQR360 for iOS — native SwiftUI client",
+  "type": "module",
+  "scripts": {
+    "lint": "node Scripts/swift-lint.mjs",
+    "lint:check": "node Scripts/swift-lint.mjs && echo OK",
+    "skills:check": "skills check",
+    "skills:update": "skills update"
+  }
+}
