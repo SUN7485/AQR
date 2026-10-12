@@ -121,7 +121,7 @@ struct AssetWorkspaceView: View {
                 ForEach(Tool.allCases) { tool in
                     let isLocked = tool.requiresPro && !asset.isProSubscribed
 
-                    if let destination = destination(for: tool), !isLocked {
+                    if destination(for: tool) != nil, !isLocked {
                         NavigationLink(value: tool) {
                             ProToolTile(tool: tool, isLocked: false)
                         }

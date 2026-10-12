@@ -14,22 +14,20 @@ concurrency:
 jobs:
   build:
     name: Build (simulator)
-    runs-on: macos-15
+    # macOS 26 ships Xcode 26.x with the iOS 26 SDK. Liquid Glass
+    # (.glassEffect, .glass, GlassEffectContainer) does not exist in the
+    # Xcode 16 SDK, and `#available` cannot gate symbols the SDK lacks —
+    # so the runner has to carry a matching SDK.
+    runs-on: macos-26
 
     steps:
       - uses: actions/checkout@v4
-
-      - name: Select Xcode
-        run: |
-          echo "::group::Available Xcode versions"
-          ls /Applications | grep -i '^Xcode' || true
-          echo "::endgroup::"
-          sudo xcode-select -s /Applications/Xcode_16.4.app
 
       - name: Show toolchain
         run: |
           xcodebuild -version
           swift --version
+          xcodebuild -showsdks | grep -i iphone
 
       - name: List schemes
         run: xcodebuild -list -project AQR360.xcodeproj
