@@ -19,7 +19,7 @@ extension Decimal {
         formatted(.currency(code: currencyCode).precision(.fractionLength(0)).locale(locale))
     }
 
-    /// Compact form for dense tiles: AED 4.5M, AED 145K.
+    /// Compact form for dense tiles: AED 1.3M, AED 145K.
     ///
     /// Falls back to the full label below 10,000 so small amounts stay exact.
     func compactMoneyLabel(
@@ -29,15 +29,29 @@ extension Decimal {
         let magnitude = abs(self)
         guard magnitude >= 10_000 else { return moneyLabel(currencyCode, locale: locale) }
 
-        let symbol = formatted(
-            .currency(code: currencyCode).precision(.fractionLength(0)).locale(locale)
-        ).filter { !$0.isNumber }
+        let style = Decimal.FormatStyle.Currency(code: currencyCode)
+            .precision(.fractionLength(0))
+            .locale(locale)
+
+        // Take everything before the first digit as the symbol, then strip the
+        // group separator the full form left behind. Filtering out non-digits
+        // keeps the separator, so "AED 912,000" yields "AED ," and the compact
+        // figure renders as "AED ,912K" instead of "AED 912K".
+        let symbol = style.format(self)
+            .prefix(while: { !$0.isNumber })
+            .trimmingCharacters(in: .whitespaces)
+            .trimmingCharacters(in: CharacterSet(charactersIn: ",.;'\u{2019}\u{00A0}\u{202F}"))
+            .trimmingCharacters(in: .whitespaces)
 
         switch magnitude {
         case 1_000_000...:
-            return "\(symbol)\((self / 1_000_000).formatted(.number.precision(.fractionLength(0...1)).locale(locale)))M"
+            let value = (self / 1_000_000)
+                .formatted(.number.precision(.fractionLength(0...1)).locale(locale))
+            return "\(symbol) \(value)M"
         default:
-            return "\(symbol)\((self / 1_000).formatted(.number.precision(.fractionLength(0)).locale(locale)))K"
+            let value = (self / 1_000)
+                .formatted(.number.precision(.fractionLength(0)).locale(locale))
+            return "\(symbol) \(value)K"
         }
     }
 }

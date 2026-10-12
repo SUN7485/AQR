@@ -218,6 +218,29 @@ for (const file of files) {
       });
     }
   }
+
+  /* 5. A type declaring its own @State copy of something it also reads from the
+   * environment. Two instances means the local one is mutated while every other
+   * view observes the injected one. That compiled cleanly and silently broke
+   * navigation once, so it is worth catching.
+   */
+  for (const block of topLevelBlocks(source)) {
+    const envNames = [...block.text.matchAll(
+      /@Environment\(\s*([\w.]+)\.self\s*\)\s*(?:private\s+)?var\s+(\w+)/g
+    )].map(m => ({ type: m[1], name: m[2] }));
+
+    for (const { type, name } of envNames) {
+      const local = new RegExp(
+        `@State\\s+(?:private\\s+)?var\\s+${name}\\s*(?::[^=]*)?=\\s*${type}\\s*\\(`);
+      block.lines.forEach((line, i) => {
+        if (local.test(line)) {
+          fail(file, block.offset + i + 1,
+            `@State ${name} shadows @Environment(${type}.self) — a second instance ` +
+            `that no other view observes. Read it from the environment instead.`);
+        }
+      });
+    }
+  }
 }
 
 if (problems === 0) {

@@ -2,7 +2,11 @@ import SwiftUI
 
 struct RootTabView: View {
     @Environment(AppStore.self) private var store
-    @State private var router = AppRouter()
+
+    // Deliberately read from the environment, not a local @State copy.
+    // Two instances meant seed() mutated a router the tabs never observed:
+    // the tab switched, but the navigation path stayed empty.
+    @Environment(AppRouter.self) private var router
 
     var body: some View {
         // `@Environment` gives no `$` projection for an @Observable, so bind it
