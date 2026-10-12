@@ -105,38 +105,58 @@ jobs:
 
       - name: Boot simulator
         run: |
+          set -euo pipefail
           DEVICE=$(xcrun simctl list devices available \
             | grep -E 'iPhone 17 Pro \(' | head -1 | grep -oE '[0-9A-F-]{36}')
           if [ -z "$DEVICE" ]; then
             DEVICE=$(xcrun simctl list devices available | grep -E 'iPhone' | head -1 | grep -oE '[0-9A-F-]{36}')
           fi
+          echo "Using $DEVICE"
           echo "DEVICE=$DEVICE" >> "$GITHUB_ENV"
           xcrun simctl boot "$DEVICE"
-          xcrun simctl bootstatus "$DEVICE" -b
-          open -a Simulator
-          xcrun simctl status_bar "$DEVICE" override \
+          # Bounded: bootstatus can wait indefinitely on a wedged runtime.
+          timeout 300 xcrun simctl bootstatus "$DEVICE" -b
+          # Headless capture: do NOT `open -a Simulator`. The app GUI is not
+          # needed for `simctl io screenshot`, and launching it can wedge the
+          # display server in CI.
+          timeout 60 xcrun simctl status_bar "$DEVICE" override \
             --time "9:41" --batteryState charged --batteryLevel 100 \
-            --wifiBars 3 --cellularBars 4
+            --wifiBars 3 --cellularBars 4 || echo "status bar override skipped"
 
       - name: Install
-        run: xcrun simctl install "$DEVICE" "$RUNNER_TEMP/build/Build/Products/Debug-iphonesimulator/$SCHEME.app"
+        run: |
+          set -euo pipefail
+          APP="$RUNNER_TEMP/build/Build/Products/Debug-iphonesimulator/$SCHEME.app"
+          test -d "$APP" || { echo "missing $APP"; exit 1; }
+          timeout 120 xcrun simctl install "$DEVICE" "$APP"
+          xcrun simctl listapps "$DEVICE" | grep -A1 "$BUNDLE_ID" | head -4 || true
 
       # One screenshot per tab. The app opens straight to the tab named by
       # -startTab, so this drives the real app rather than simulating taps.
+      # Every simctl call is bounded: a hung `io screenshot` would otherwise
+      # stall the job until the 6h job timeout.
       - name: Capture tabs
         run: |
+          set -uo pipefail
           mkdir -p screenshots
           for TAB in home market assets services account; do
-            echo "capturing $TAB"
             xcrun simctl terminate "$DEVICE" "$BUNDLE_ID" 2>/dev/null || true
-            xcrun simctl launch "$DEVICE" "$BUNDLE_ID" -startTab "$TAB"
-            sleep 6
-            xcrun simctl io "$DEVICE" screenshot "screenshots/$TAB.png"
+            timeout 60 xcrun simctl launch "$DEVICE" "$BUNDLE_ID" -startTab "$TAB" \
+              || { echo "launch failed for $TAB"; continue; }
+            sleep 7
+            if timeout 90 xcrun simctl io "$DEVICE" screenshot "screenshots/$TAB.png"; then
+              echo "captured $TAB"
+            else
+              echo "screenshot FAILED for $TAB"
+            fi
           done
+          ls -l screenshots || true
 
       - name: Upload screenshots
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: screenshots
           path: screenshots/*.png
           retention-days: 14
+          if-no-files-found: warn
