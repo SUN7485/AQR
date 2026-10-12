@@ -14,7 +14,6 @@ concurrency:
 env:
   SCHEME: AQR360
   BUNDLE_ID: com.aqr360.app
-  DERIVED: ${{ runner.temp }}/build
 
 jobs:
   lint:
@@ -50,6 +49,8 @@ jobs:
       # Signless simulator build: catches every compile and link error without
       # needing an Apple Developer account or a provisioning profile.
       - name: Build
+        env:
+          DERIVED: ${{ runner.temp }}/build
         run: |
           set -o pipefail
           xcodebuild build \
@@ -67,7 +68,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: AQR360-simulator-build
-          path: ${{ env.DERIVED }}/Build/Products/Debug-iphonesimulator/${{ env.SCHEME }}.app
+          path: ${{ runner.temp }}/build/Build/Products/Debug-iphonesimulator/${{ env.SCHEME }}.app
           retention-days: 7
           if-no-files-found: error
 
@@ -87,6 +88,8 @@ jobs:
           path: app
 
       - name: Build
+        env:
+          DERIVED: ${{ runner.temp }}/build
         run: |
           set -o pipefail
           xcodebuild build \
@@ -108,7 +111,6 @@ jobs:
             DEVICE=$(xcrun simctl list devices available | grep -E 'iPhone' | head -1 | grep -oE '[0-9A-F-]{36}')
           fi
           echo "DEVICE=$DEVICE" >> "$GITHUB_ENV"
-          echo "$DEVICE" > /tmp/simdevice
           xcrun simctl boot "$DEVICE"
           xcrun simctl bootstatus "$DEVICE" -b
           open -a Simulator
@@ -117,7 +119,7 @@ jobs:
             --wifiBars 3 --cellularBars 4
 
       - name: Install
-        run: xcrun simctl install "$DEVICE" "$DERIVED/Build/Products/Debug-iphonesimulator/$SCHEME.app"
+        run: xcrun simctl install "$DEVICE" "$RUNNER_TEMP/build/Build/Products/Debug-iphonesimulator/$SCHEME.app"
 
       # One screenshot per tab. The app opens straight to the tab named by
       # -startTab, so this drives the real app rather than simulating taps.
@@ -125,12 +127,11 @@ jobs:
         run: |
           mkdir -p screenshots
           for TAB in home market assets services account; do
-            echo "::group::$TAB"
+            echo "capturing $TAB"
             xcrun simctl terminate "$DEVICE" "$BUNDLE_ID" 2>/dev/null || true
             xcrun simctl launch "$DEVICE" "$BUNDLE_ID" -startTab "$TAB"
             sleep 6
             xcrun simctl io "$DEVICE" screenshot "screenshots/$TAB.png"
-            echo "::endgroup::"
           done
 
       - name: Upload screenshots
@@ -139,16 +140,3 @@ jobs:
           name: screenshots
           path: screenshots/*.png
           retention-days: 14
-
-      - name: Summary
-        run: |
-          {
-            echo "## Screenshots"
-            echo
-            for f in screenshots/*.png; do
-              echo "### $(basename "$f" .png)"
-              echo
-              echo "![$f](https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}/screenshots/$(basename "$f"))"
-              echo
-            done
-          } >> "$GITHUB_STEP_SUMMARY"
