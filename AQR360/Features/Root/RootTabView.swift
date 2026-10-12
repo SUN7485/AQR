@@ -3,27 +3,29 @@ import SwiftUI
 struct RootTabView: View {
     @Environment(AppStore.self) private var store
 
-    @State private var selection: Tab = .home
+    @State private var selection: RootTab = .home
 
-    enum Tab: Hashable {
+    /// Named `RootTab`, not `Tab` — a nested type named `Tab` shadows
+    /// `SwiftUI.Tab` inside this type and breaks every tab declaration below.
+    enum RootTab: Hashable {
         case home, market, assets, services, account
     }
 
     var body: some View {
         TabView(selection: $selection) {
-            Tab("Home", systemImage: "square.grid.2x2.fill", value: .home) {
+            SwiftUI.Tab("Home", systemImage: "square.grid.2x2.fill", value: .home) {
                 HomeView()
             }
-            Tab("Market", systemImage: "storefront.fill", value: .market) {
+            SwiftUI.Tab("Market", systemImage: "storefront.fill", value: .market) {
                 MarketView()
             }
-            Tab("Assets", systemImage: "building.2.fill", value: .assets) {
+            SwiftUI.Tab("Assets", systemImage: "building.2.fill", value: .assets) {
                 AssetsView()
             }
-            Tab("Services", systemImage: "wrench.and.screwdriver.fill", value: .services) {
+            SwiftUI.Tab("Services", systemImage: "wrench.and.screwdriver.fill", value: .services) {
                 ServicesView()
             }
-            Tab("Account", systemImage: "person.crop.circle.fill", value: .account) {
+            SwiftUI.Tab("Account", systemImage: "person.crop.circle.fill", value: .account) {
                 AccountView()
             }
         }
@@ -33,5 +35,5 @@ struct RootTabView: View {
 
 #Preview("Root") {
     RootTabView()
-        .environment(AppStore())
+        .environment(AQRFixture.store)
 }

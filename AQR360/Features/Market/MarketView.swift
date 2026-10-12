@@ -32,12 +32,11 @@ struct MarketView: View {
             .navigationDestination(for: Listing.self) { ListingDetailView(listing: $0) }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        Bindable(store).selectedCategory = nil
-                    } label: {
-                        if store.selectedCategory != nil {
-                            Text("Clear").font(.subheadline)
-                        }
+                    // Mutate through the store directly: `Bindable(store).x = y`
+                    // cannot assign, because a Bindable wrapper is a temporary.
+                    if store.selectedCategory != nil {
+                        Button("Clear") { store.selectedCategory = nil }
+                            .font(.subheadline)
                     }
                 }
             }
