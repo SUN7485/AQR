@@ -59,6 +59,30 @@ stays usable on iOS 18–25 and under Reduce Transparency.
 All colour, spacing and radius values come from `Core/Design/Brand.swift`
 (`Brand`, `Metric`). Do not hard-code hex values or magic numbers in views.
 
+**Currency and locale**
+
+`Core/Config/AppConfiguration.swift` is the single source of truth, verified
+against the `aqr360.com` runtime config: **currency AED**, **country AE**,
+locale `en_AE`. Injected through `@Environment(\.configuration)`.
+
+- Never call `.currency(code:)` inline. Use `Decimal.moneyLabel(_:locale:)`,
+  or the model helpers that take an `AppConfiguration` —
+  `listing.priceLabel(configuration)`, `asset.netMonthlyLabel(configuration)`.
+- Never hard-code a currency code, country code or `Locale(identifier:)`.
+- Dates, relative dates and grouped numbers go through the helpers in
+  `Core/Design/Formatting.swift`, which take the configured locale.
+- When the server starts sending its own currency, assign it once in
+  `AppStore`. Do not patch call sites.
+
+**Demo data**
+
+`SampleData` is illustrative, not real AQR360 records. `AppStore.isDemoData`
+marks it and drives a visible banner on Home. Keep that flag honest — it is
+`false` only once `load()` is backed by a real client.
+
+Fixture arithmetic must stay internally consistent: `netMonthly` is always
+income minus expenses, and `occupiedUnitCount` always derives from occupancy.
+
 ## Layout rules
 
 - Prefer adaptive stack spacing (omit `spacing:`) unless a specific value is

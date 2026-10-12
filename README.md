@@ -7,8 +7,23 @@ Glass treatment on iOS 26+.
 ## Status
 
 Demo build. Every screen runs against deterministic fixtures in
-`AQR360/Data/SampleData.swift`; no network client is wired yet. The seams for
-it are already in place — see *Production integration* below.
+`AQR360/Data/SampleData.swift`; no network client is wired yet. `AppStore.isDemoData`
+marks it and shows a banner so fixtures are never mistaken for live records.
+The seams are already in place — see *Production integration* below.
+
+## Currency and market
+
+**AED**, locale `en_AE`, country `AE`. Not assumed — read from the
+`aqr360.com` Nuxt runtime config:
+
+```json
+{ "currency": "AED", "defaultCountryCode": "AE", "apiBase": "https://api.aqr360.com" }
+```
+
+`Core/Config/AppConfiguration.swift` owns this and is injected through
+`EnvironmentValues`. Every money, date and number in the UI formats through
+`Core/Design/Formatting.swift` using that configuration, so a server-supplied
+currency change is one assignment rather than a sweep through the views.
 
 ## Screens
 
@@ -110,18 +125,28 @@ real type check.
 
 ## Production integration
 
-The demo deliberately stops at the UI layer. When wiring the real backend:
+The demo deliberately stops at the UI layer. The contract has been identified
+but **nothing has been called** — see [Docs/API-INTEGRATION.md](Docs/API-INTEGRATION.md)
+for the verified endpoints, the providers in play (Firebase Auth/Storage/FCM,
+Telr payments, Mapbox, reCAPTCHA) and the seven open questions for the backend
+team.
 
-- `AppStore.load()` is the single entry point — swap the fixture fill for
-  `aqr360.com` REST calls behind the same accessors so no view changes.
-- Add an `AuthenticationStore` and inject it alongside `AppStore`; the
-  `authentication` skill covers Sign in with Apple and passkeys.
-- Booking a Pro service needs StoreKit 2 (`storekit` skill) plus server-side
-  receipt validation. Subscription state must gate the Pro tiles, not just
-  their appearance.
-- The document vault holds title deeds — treat it as sensitive: encrypt at rest
+When wiring the real backend:
+
+- `AppStore.load()` stays the single entry point — swap the fixture fill for an
+  injected `AQRClient`. No view changes; `isLoading`, `loadError` and
+  `isDemoData` are already wired for it.
+- `AppConfiguration` should be populated from the server's own config rather
+  than the compiled-in default.
+- Auth is Firebase-based on the web product. Confirm whether native should use
+  Firebase Auth directly or AQR360's own `accessToken`/`refreshToken` pair, and
+  whether OTP or passkeys are required — Sign in with Apple is mandatory if
+  third-party social login is offered.
+- Booking a Pro service needs Telr checkout. Subscription state must gate the
+  Pro tiles, not just their appearance.
+- The document vault holds title deeds — treat as sensitive: encrypt at rest
   and gate behind biometrics (`swift-security` skill).
-- Push notifications for ticket and announcement updates
+- Push notifications for ticket and announcement updates ride on FCM
   (`push-notifications` skill).
 
 ## Agent skills
