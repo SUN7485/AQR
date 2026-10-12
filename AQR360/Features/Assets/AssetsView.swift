@@ -51,7 +51,7 @@ private struct AssetCard: View {
                 }
 
                 HStack(spacing: Metric.m) {
-                    AQStat(value: asset.netMonthlyLabel(configuration), label: "Net / month",
+                    AQStat(value: asset.netMonthlyCompact(configuration), label: "Net / month",
                            systemImage: "arrow.up.right", tone: .success)
                     AQStat(value: asset.occupancyLabel, label: "Occupancy",
                            systemImage: "person.2", tone: .accent)

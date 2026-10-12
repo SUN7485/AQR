@@ -104,11 +104,11 @@ struct AssetWorkspaceView: View {
         VStack(alignment: .leading, spacing: Metric.m) {
             AQSectionHeader("Performance", subtitle: "Current month")
             HStack(spacing: Metric.m) {
-                AQStat(value: asset.money(asset.monthlyIncome, configuration),
+                AQStat(value: asset.moneyCompact(asset.monthlyIncome, configuration),
                        label: "Income", systemImage: "arrow.down", tone: .success)
-                AQStat(value: asset.money(asset.monthlyExpenses, configuration),
+                AQStat(value: asset.moneyCompact(asset.monthlyExpenses, configuration),
                        label: "Expenses", systemImage: "arrow.up", tone: .danger)
-                AQStat(value: asset.netMonthlyLabel(configuration), label: "Net", systemImage: "equal", tone: .accent)
+                AQStat(value: asset.netMonthlyCompact(configuration), label: "Net", systemImage: "equal", tone: .accent)
             }
         }
     }

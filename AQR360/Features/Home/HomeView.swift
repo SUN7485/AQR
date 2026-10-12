@@ -80,7 +80,7 @@ struct HomeView: View {
             AQSectionHeader("Portfolio", subtitle: "Across \(store.assets.count) assets")
 
             HStack(spacing: Metric.m) {
-                AQStat(value: store.totalMonthlyNetLabel,
+                AQStat(value: store.totalMonthlyNetCompact,
                        label: "Net per month",
                        systemImage: "arrow.up.right",
                        tone: .success)

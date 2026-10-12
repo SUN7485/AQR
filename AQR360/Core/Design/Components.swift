@@ -65,6 +65,10 @@ struct AQBadge: View {
 }
 
 /// Single-value statistic used in Home and the Pro workspace summaries.
+///
+/// Pass a `compactMoneyLabel` value for money: stat tiles are narrow, and a
+/// full-precision figure truncates to "AED 1,312,5…", which is worse than
+/// useless.
 struct AQStat: View {
     let value: String
     let label: String
@@ -132,17 +136,13 @@ struct AQHeroHeader<Trailing: View>: View {
     @ViewBuilder var trailing: Trailing
 
     var body: some View {
-        ZStack(alignment: .bottomLeading) {
-            Brand.heroGradient
+        // VStack + Spacer rather than ZStack(alignment: .bottomLeading). The
+        // ZStack form left the title with no reliable vertical space at a
+        // fixed height and it silently collapsed; this cannot.
+        VStack(spacing: 0) {
+            Spacer(minLength: 0)
 
-            // Soft light bloom so the flat gradient does not read as a slab.
-            Circle()
-                .fill(.white.opacity(0.16))
-                .frame(width: 260, height: 260)
-                .blur(radius: 60)
-                .offset(x: 110, y: -70)
-
-            HStack(alignment: .top) {
+            HStack(alignment: .bottom) {
                 VStack(alignment: .leading, spacing: Metric.xs) {
                     Text(eyebrow.uppercased())
                         .font(.caption2.weight(.bold))
@@ -151,7 +151,8 @@ struct AQHeroHeader<Trailing: View>: View {
                     Text(title)
                         .font(.largeTitle.weight(.bold))
                         .foregroundStyle(.white)
-                        .minimumScaleFactor(0.7)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
                 }
                 Spacer(minLength: Metric.s)
                 trailing
@@ -159,6 +160,17 @@ struct AQHeroHeader<Trailing: View>: View {
             .padding(Metric.l)
         }
         .frame(height: 148)
+        .frame(maxWidth: .infinity)
+        .background(Brand.heroGradient)
+        .overlay {
+            // Soft light bloom so the flat gradient does not read as a slab.
+            Circle()
+                .fill(.white.opacity(0.16))
+                .frame(width: 260, height: 260)
+                .blur(radius: 60)
+                .offset(x: 120, y: -80)
+                .allowsHitTesting(false)
+        }
         .clipShape(.rect(bottomLeadingRadius: Metric.sheetRadius, bottomTrailingRadius: Metric.sheetRadius))
     }
 }

@@ -96,8 +96,18 @@ struct Asset: Identifiable, Hashable, Sendable {
         netMonthly.moneyLabel(configuration.currencyCode, locale: configuration.locale)
     }
 
+    /// Compact form for narrow stat tiles.
+    func netMonthlyCompact(_ configuration: AppConfiguration) -> String {
+        netMonthly.compactMoneyLabel(configuration.currencyCode, locale: configuration.locale)
+    }
+
     func money(_ amount: Decimal, _ configuration: AppConfiguration) -> String {
         amount.moneyLabel(configuration.currencyCode, locale: configuration.locale)
+    }
+
+    /// Compact form for narrow stat tiles.
+    func moneyCompact(_ amount: Decimal, _ configuration: AppConfiguration) -> String {
+        amount.compactMoneyLabel(configuration.currencyCode, locale: configuration.locale)
     }
 
     var occupancyLabel: String {

@@ -100,6 +100,10 @@ final class AppStore {
         totalMonthlyNet.moneyLabel(currencyCode, locale: locale)
     }
 
+    var totalMonthlyNetCompact: String {
+        totalMonthlyNet.compactMoneyLabel(currencyCode, locale: locale)
+    }
+
     var openTicketCount: Int {
         assets.reduce(0) { $0 + $1.openTicketCount }
     }
