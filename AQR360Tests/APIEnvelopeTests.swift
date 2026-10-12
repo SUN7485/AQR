@@ -14,19 +14,24 @@ import Testing
 /// compiles and shows nothing, which reads as "no results" to a user.
 struct APIEnvelopeTests {
 
-    /// Marker used only to locate the bundle holding the fixture. `Bundle.module`
-    /// is a Swift Package Manager concept and does not exist for an app test
-    /// bundle.
-    private final class BundleToken {}
-
     // MARK: - Helpers
 
+    /// Loads the fixture from the checkout rather than from the test bundle.
+    ///
+    /// A `.json` inside a file-system synchronized group has to be picked up by
+    /// the Resources build phase to be found via `Bundle.url(forResource:)`,
+    /// and that cannot be verified without a local Swift toolchain. Reading the
+    /// checked-out source file via `#filePath` removes the build-phase
+    /// dependency entirely — and the runner always has the checkout.
+    ///
+    /// `Bundle.module` is also wrong here: it is a Swift Package Manager
+    /// concept and does not exist for an app test bundle.
     static func loadFixture() throws -> Data {
-        let url = try #require(
-            Bundle(for: BundleToken.self).url(
-                forResource: "countries", withExtension: "sample.json",
-                subdirectory: "Fixtures"),
-            "countries.sample.json missing from the test bundle")
+        let url = URL(fileURLWithPath: #filePath)      // …/AQR360Tests/APIEnvelopeTests.swift
+            .deletingLastPathComponent()               // …/AQR360Tests
+            .appendingPathComponent("Fixtures/countries.sample.json")
+        try #require(FileManager.default.fileExists(atPath: url.path),
+                     "Fixture missing at \(url.path)")
         return try Data(contentsOf: url)
     }
 
