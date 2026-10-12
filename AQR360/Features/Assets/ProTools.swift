@@ -22,6 +22,8 @@ struct ContractsView: View {
 }
 
 private struct ContractRow: View {
+    @Environment(\.configuration) private var configuration
+
     let contract: Contract
 
     var body: some View {
@@ -45,7 +47,8 @@ private struct ContractRow: View {
             VStack(alignment: .trailing, spacing: 2) {
                 AQBadge(text: statusLabel, tone: tone)
                 if contract.deposit > 0 {
-                    Text("Deposit \(contract.deposit.moneyLabel)")
+                    Text("Deposit " + contract.deposit.moneyLabel(configuration.currencyCode,
+                                                                       locale: configuration.locale))
                         .font(.caption2)
                         .foregroundStyle(.tertiary)
                 }
@@ -103,6 +106,8 @@ struct VaultView: View {
 }
 
 private struct VaultRow: View {
+    @Environment(\.configuration) private var configuration
+
     let document: VaultDocument
 
     var body: some View {
@@ -130,7 +135,7 @@ private struct VaultRow: View {
 
             Spacer(minLength: Metric.s)
 
-            Text(document.updated, format: .relative(presentation: .numeric))
+            Text(document.updated.relativeToNow(configuration.locale))
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
         }

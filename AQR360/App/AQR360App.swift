@@ -8,6 +8,7 @@ struct AQR360App: App {
         WindowGroup {
             RootTabView()
                 .environment(store)
+                .environment(\.configuration, store.configuration)
                 .tint(Brand.primary)
         }
     }

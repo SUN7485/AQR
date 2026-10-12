@@ -87,6 +87,8 @@ private struct CategoryChip: View {
 }
 
 private struct ListingRow: View {
+    @Environment(\.configuration) private var configuration
+
     let listing: Listing
 
     var body: some View {
@@ -120,7 +122,7 @@ private struct ListingRow: View {
                 Divider()
 
                 HStack(alignment: .firstTextBaseline) {
-                    Text(listing.priceLabel)
+                    Text(listing.priceLabel(configuration))
                         .font(.title3.weight(.bold))
                         .foregroundStyle(Brand.primary)
                         .contentTransition(.numericText())
@@ -141,6 +143,8 @@ private struct ListingRow: View {
 // MARK: - Detail
 
 struct ListingDetailView: View {
+    @Environment(\.configuration) private var configuration
+
     let listing: Listing
 
     var body: some View {
@@ -155,7 +159,7 @@ struct ListingDetailView: View {
                         .padding(Metric.l)
 
                     VStack(alignment: .leading, spacing: Metric.xs) {
-                        Text(listing.priceLabel)
+                        Text(listing.priceLabel(configuration))
                             .font(.largeTitle.weight(.bold))
                             .foregroundStyle(.white)
                         Text(listing.address)

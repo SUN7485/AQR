@@ -1,17 +1,77 @@
 import Foundation
+import SwiftUI
+
+// MARK: - Money
 
 extension Decimal {
 
-    /// Whole-unit money label.
+    /// Whole-unit money label in the configured currency.
     ///
-    /// Cents are noise at property magnitudes — `$185,000.00` wraps to two lines
-    /// in a stat tile where `$185,000` fits on one. Always build money labels
-    /// through this rather than calling `.currency(code:)` inline, so rounding
-    /// is decided once.
-    var moneyLabel: String {
-        formatted(.currency(code: "USD").precision(.fractionLength(0)))
+    /// Fraction digits are dropped deliberately: at property magnitudes AED
+    /// 185,000.00 carries no information and wraps to two lines in a stat tile.
+    ///
+    /// Always build money through this or `moneyLabel(_:locale:)` — never call
+    /// `.currency(code:)` inline, so currency and rounding are decided once.
+    func moneyLabel(
+        _ currencyCode: String = AppConfiguration.verified.currencyCode,
+        locale: Locale = AppConfiguration.verified.locale
+    ) -> String {
+        formatted(.currency(code: currencyCode).precision(.fractionLength(0)).locale(locale))
+    }
+
+    /// Compact form for dense tiles: AED 4.5M, AED 145K.
+    ///
+    /// Falls back to the full label below 10,000 so small amounts stay exact.
+    func compactMoneyLabel(
+        _ currencyCode: String = AppConfiguration.verified.currencyCode,
+        locale: Locale = AppConfiguration.verified.locale
+    ) -> String {
+        let magnitude = abs(self)
+        guard magnitude >= 10_000 else { return moneyLabel(currencyCode, locale: locale) }
+
+        let symbol = formatted(
+            .currency(code: currencyCode).precision(.fractionLength(0)).locale(locale)
+        ).filter { !$0.isNumber }
+
+        switch magnitude {
+        case 1_000_000...:
+            return "\(symbol)\((self / 1_000_000).formatted(.number.precision(.fractionLength(0...1)).locale(locale)))M"
+        default:
+            return "\(symbol)\((self / 1_000).formatted(.number.precision(.fractionLength(0)).locale(locale)))K"
+        }
     }
 }
+
+// MARK: - Dates
+
+extension Date {
+
+    /// Day-first short date — 12 Mar 2027 under en_AE.
+    func shortDate(_ locale: Locale = AppConfiguration.verified.locale) -> String {
+        formatted(.dateTime.day().month(.abbreviated).year().locale(locale))
+    }
+
+    /// Month and year only — Mar 2027. Used where the day is noise.
+    func monthYear(_ locale: Locale = AppConfiguration.verified.locale) -> String {
+        formatted(.dateTime.month(.abbreviated).year().locale(locale))
+    }
+
+    /// "3 days ago" / "in 2 weeks".
+    func relativeToNow(_ locale: Locale = AppConfiguration.verified.locale) -> String {
+        formatted(.relative(presentation: .named).locale(locale))
+    }
+}
+
+// MARK: - Numbers
+
+extension Int {
+    /// Grouped count — 5,200.
+    func grouped(_ locale: Locale = AppConfiguration.verified.locale) -> String {
+        formatted(.number.locale(locale))
+    }
+}
+
+// MARK: - Strings
 
 extension String {
 

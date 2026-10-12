@@ -7,6 +7,7 @@ struct HomeView: View {
         NavigationStack {
             ScrollView {
                 LazyVStack(spacing: Metric.l) {
+                    demoBanner
                     header
                     quickActions
                     portfolioSummary
@@ -25,6 +26,32 @@ struct HomeView: View {
     }
 
     // MARK: - Sections
+
+    /// Surfaced whenever `AppStore.isDemoData` is true, so a demo is never
+    /// mistaken for live AQR360 data. Disappears the moment a real client is
+    /// wired into `load()`.
+    @ViewBuilder
+    private var demoBanner: some View {
+        if store.isDemoData {
+            HStack(spacing: Metric.s) {
+                Image(systemName: "testtube.2")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(Brand.warning)
+
+                Text("Demo data — not live AQR360 records")
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.secondary)
+
+                Spacer(minLength: 0)
+
+                AQBadge(text: store.configuration.currencyCode, tone: .warning)
+            }
+            .padding(.horizontal, Metric.m)
+            .padding(.vertical, Metric.s)
+            .background(Brand.warning.opacity(0.10), in: .rect(cornerRadius: Metric.chipRadius))
+            .accessibilityElement(children: .combine)
+        }
+    }
 
     private var header: some View {
         AQHeroHeader(

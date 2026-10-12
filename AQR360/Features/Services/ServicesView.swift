@@ -102,6 +102,8 @@ private struct TicketDetailRow: View {
 }
 
 private struct ServiceRow: View {
+    @Environment(\.configuration) private var configuration
+
     let offering: ServiceOffering
     let onBook: () -> Void
 
@@ -132,7 +134,8 @@ private struct ServiceRow: View {
                             .foregroundStyle(.secondary)
                             .multilineTextAlignment(.leading)
                         HStack(spacing: Metric.m) {
-                            Text("From \(offering.startingPrice.moneyLabel)")
+                            Text("From " + offering.startingPrice.moneyLabel(configuration.currencyCode,
+                                                              locale: configuration.locale))
                                 .font(.caption.weight(.medium))
                                 .foregroundStyle(Brand.primary)
                             Label("\(offering.turnaroundDays)d", systemImage: "clock")
@@ -153,6 +156,7 @@ private struct ServiceRow: View {
 
 private struct BookServiceSheet: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.configuration) private var configuration
 
     let offering: ServiceOffering
 
@@ -165,7 +169,9 @@ private struct BookServiceSheet: View {
             Form {
                 Section("Service") {
                     LabeledContent("Provider", value: offering.name)
-                    LabeledContent("Starting at", value: offering.startingPrice.moneyLabel)
+                    LabeledContent("Starting at",
+                                value: offering.startingPrice.moneyLabel(configuration.currencyCode,
+                                                                               locale: configuration.locale))
                     LabeledContent("Turnaround", value: "\(offering.turnaroundDays) days")
                 }
 

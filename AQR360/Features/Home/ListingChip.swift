@@ -2,6 +2,8 @@ import SwiftUI
 
 /// Compact listing tile used in the Home "Fresh on the market" carousel.
 struct ListingChip: View {
+    @Environment(\.configuration) private var configuration
+
     let listing: Listing
 
     var body: some View {
@@ -26,7 +28,7 @@ struct ListingChip: View {
                     .font(.subheadline.weight(.semibold))
                     .lineLimit(1)
 
-                Text(listing.priceLabel)
+                Text(listing.priceLabel(configuration))
                     .font(.footnote.weight(.bold))
                     .foregroundStyle(Brand.primary)
                     .lineLimit(1)

@@ -3,10 +3,15 @@ import Foundation
 // MARK: - Listing
 
 /// A property listing on the AQR360 Market.
+///
+/// `locality` is separated from `address` because the web product filters and
+/// groups by community (Dubai Marina, Downtown Dubai, …) independently of the
+/// street line, and the API returns them as distinct concerns.
 struct Listing: Identifiable, Hashable, Sendable {
     let id: UUID
     let title: String
     let address: String
+    let locality: String
     let category: ListingCategory
     let price: Decimal
     let period: PaymentPeriod
@@ -17,18 +22,29 @@ struct Listing: Identifiable, Hashable, Sendable {
     let agentName: String
     let badge: String?
 
-    var priceLabel: String {
-        period == .once ? price.moneyLabel : price.moneyLabel + "/mo"
+    var priceLabel: String { priceLabel(.verified) }
+
+    /// Currency-aware price label. Pass the environment configuration in views
+    /// so a server-supplied currency propagates; the default is the verified
+    /// AQR360 setting.
+    func priceLabel(_ configuration: AppConfiguration) -> String {
+        let base = price.moneyLabel(configuration.currencyCode, locale: configuration.locale)
+        return period == .once ? base : base + "/mo"
     }
 
     var specSummary: String {
-        "\(bedrooms) bed · \(bathrooms) bath · \(areaSquareFeet.formatted()) sqft"
+        var parts: [String] = []
+        if bedrooms > 0 { parts.append("\(bedrooms) bed") }
+        if bathrooms > 0 { parts.append("\(bathrooms) bath") }
+        parts.append("\(areaSquareFeet.grouped()) sqft")
+        return parts.joined(separator: " · ")
     }
 }
 
 enum ListingCategory: String, CaseIterable, Identifiable, Sendable {
     case apartments = "Apartments"
     case houses = "Houses"
+    case villas = "Villas"
     case commercial = "Commercial"
     case land = "Land"
 
@@ -38,6 +54,7 @@ enum ListingCategory: String, CaseIterable, Identifiable, Sendable {
         switch self {
         case .apartments: "building.2"
         case .houses: "house"
+        case .villas: "house.fill"
         case .commercial: "briefcase"
         case .land: "map"
         }
@@ -53,22 +70,34 @@ enum PaymentPeriod: String, Sendable {
 // MARK: - Asset
 
 /// A property the user owns, managed through AQR360 Pro.
+///
+/// Income and expenses are stored, not derived from a rate card, so the figures
+/// reconcile with whatever the API eventually returns. `netMonthly` is the one
+/// place income minus expenses is computed.
 struct Asset: Identifiable, Hashable, Sendable {
     let id: UUID
     let name: String
     let address: String
+    let locality: String
     let category: ListingCategory
     let isProSubscribed: Bool
-    var occupancyRate: Double
+    let occupancyRate: Double
+    let unitCount: Int
     let monthlyIncome: Decimal
     let monthlyExpenses: Decimal
-    let tenantCount: Int
     let openTicketCount: Int
 
     var netMonthly: Decimal { monthlyIncome - monthlyExpenses }
 
-    var netMonthlyLabel: String {
-        netMonthly.moneyLabel
+    /// Units currently let. Drives the tenant roster so the two never disagree.
+    var occupiedUnitCount: Int { Int((Double(unitCount) * occupancyRate).rounded()) }
+
+    func netMonthlyLabel(_ configuration: AppConfiguration) -> String {
+        netMonthly.moneyLabel(configuration.currencyCode, locale: configuration.locale)
+    }
+
+    func money(_ amount: Decimal, _ configuration: AppConfiguration) -> String {
+        amount.moneyLabel(configuration.currencyCode, locale: configuration.locale)
     }
 
     var occupancyLabel: String {

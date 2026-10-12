@@ -5,6 +5,8 @@ import SwiftUI
 /// Pro capabilities stay visible but locked when the asset has no active
 /// subscription, mirroring the owner-controlled policy on the web product.
 struct AssetWorkspaceView: View {
+    @Environment(\.configuration) private var configuration
+
     let asset: Asset
 
     enum Tool: String, CaseIterable, Identifiable {
@@ -102,11 +104,11 @@ struct AssetWorkspaceView: View {
         VStack(alignment: .leading, spacing: Metric.m) {
             AQSectionHeader("Performance", subtitle: "Current month")
             HStack(spacing: Metric.m) {
-                AQStat(value: asset.monthlyIncome.moneyLabel,
+                AQStat(value: asset.money(asset.monthlyIncome, configuration),
                        label: "Income", systemImage: "arrow.down", tone: .success)
-                AQStat(value: asset.monthlyExpenses.moneyLabel,
+                AQStat(value: asset.money(asset.monthlyExpenses, configuration),
                        label: "Expenses", systemImage: "arrow.up", tone: .danger)
-                AQStat(value: asset.netMonthlyLabel, label: "Net", systemImage: "equal", tone: .accent)
+                AQStat(value: asset.netMonthlyLabel(configuration), label: "Net", systemImage: "equal", tone: .accent)
             }
         }
     }
@@ -148,7 +150,7 @@ struct AssetWorkspaceView: View {
         let lastID = roster.last?.id
 
         return VStack(alignment: .leading, spacing: Metric.m) {
-            AQSectionHeader("Tenant access", subtitle: "\(asset.tenantCount) invited")
+            AQSectionHeader("Tenant access", subtitle: "\(asset.occupiedUnitCount) of \(asset.unitCount) units let")
 
             AQCard {
                 VStack(spacing: Metric.m) {
@@ -170,7 +172,7 @@ struct AssetWorkspaceView: View {
 
                             Spacer(minLength: Metric.s)
 
-                            Text(tenant.leaseEnd, format: .dateTime.month(.abbreviated).year())
+                            Text(tenant.leaseEnd.monthYear(configuration.locale))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -199,7 +201,7 @@ struct AssetWorkspaceView: View {
                             Text(notice.title)
                                 .font(.subheadline.weight(.semibold))
                             Spacer(minLength: 0)
-                            Text(notice.posted, format: .relative(presentation: .named))
+                            Text(notice.posted.relativeToNow(configuration.locale))
                                 .font(.caption2)
                                 .foregroundStyle(.tertiary)
                         }

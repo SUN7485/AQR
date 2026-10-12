@@ -27,6 +27,8 @@ struct AssetsView: View {
 }
 
 private struct AssetCard: View {
+    @Environment(\.configuration) private var configuration
+
     let asset: Asset
 
     var body: some View {
@@ -49,14 +51,15 @@ private struct AssetCard: View {
                 }
 
                 HStack(spacing: Metric.m) {
-                    AQStat(value: asset.netMonthlyLabel, label: "Net / month",
+                    AQStat(value: asset.netMonthlyLabel(configuration), label: "Net / month",
                            systemImage: "arrow.up.right", tone: .success)
                     AQStat(value: asset.occupancyLabel, label: "Occupancy",
                            systemImage: "person.2", tone: .accent)
                 }
 
                 HStack(spacing: Metric.s) {
-                    AQBadge(text: "\(asset.tenantCount) tenants", systemImage: "person.2")
+                    AQBadge(text: "\(asset.occupiedUnitCount) of \(asset.unitCount) let",
+                            systemImage: "person.2")
                     if asset.openTicketCount > 0 {
                         AQBadge(text: "\(asset.openTicketCount) open", systemImage: "wrench.and.screwdriver",
                                 tone: .warning)

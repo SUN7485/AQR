@@ -4,9 +4,14 @@ import Observation
 /// Root store for the demo build.
 ///
 /// Owns the authenticated account, the cached market inventory and the
-/// property portfolio. In production this is where the `aqr360.com` REST client
-/// would be injected — every accessor is read-only from a view's point of view
-/// so swapping the backing source does not change any view.
+/// property portfolio.
+///
+/// ## Data source
+///
+/// `load()` currently fills from `SampleData`. `isDemoData` is the single flag
+/// that marks it: the UI surfaces it, and it flips to `false` the moment a real
+/// `AQRClient` is injected. Do not add a second source of truth — swap the fill
+/// inside `load()` and every view keeps working unchanged.
 @MainActor
 @Observable
 final class AppStore {
@@ -20,6 +25,7 @@ final class AppStore {
 
     // MARK: - Published state
 
+    private(set) var configuration: AppConfiguration
     private(set) var account: Account
     private(set) var listings: [Listing] = []
     private(set) var assets: [Asset] = []
@@ -28,6 +34,10 @@ final class AppStore {
     private(set) var isLoading = true
     private(set) var loadError: String?
 
+    /// True while the UI is rendering fixtures rather than live API data.
+    /// Shown in the UI so a demo is never mistaken for the real product.
+    private(set) var isDemoData = true
+
     // MARK: - Search
 
     var searchText = ""
@@ -35,7 +45,8 @@ final class AppStore {
 
     // MARK: - Init
 
-    init() {
+    init(configuration: AppConfiguration = .verified) {
+        self.configuration = configuration
         self.account = Account(
             name: "Adaeze Nwosu",
             email: "adaeze@aqr360.com",
@@ -52,6 +63,7 @@ final class AppStore {
         // Stands in for the network round-trip; keeps loading states demonstrable.
         try? await Task.sleep(for: .milliseconds(450))
         guard !Task.isCancelled else { return }
+
         listings = SampleData.listings()
         assets = SampleData.assets()
         services = SampleData.services()
@@ -61,8 +73,9 @@ final class AppStore {
 
     // MARK: - Derived
 
-    /// Given name for greetings.
     var firstName: String { account.name.firstName }
+    var currencyCode: String { configuration.currencyCode }
+    var locale: Locale { configuration.locale }
 
     var proAssets: [Asset] { assets.filter(\.isProSubscribed) }
 
@@ -75,6 +88,7 @@ final class AppStore {
             return listing.title.localizedCaseInsensitiveContains(query)
                 || listing.address.localizedCaseInsensitiveContains(query)
                 || listing.agentName.localizedCaseInsensitiveContains(query)
+                || listing.locality.localizedCaseInsensitiveContains(query)
         }
     }
 
@@ -83,7 +97,7 @@ final class AppStore {
     }
 
     var totalMonthlyNetLabel: String {
-        totalMonthlyNet.moneyLabel
+        totalMonthlyNet.moneyLabel(currencyCode, locale: locale)
     }
 
     var openTicketCount: Int {
