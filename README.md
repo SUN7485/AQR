@@ -26,6 +26,23 @@ plus tenant access and announcements. Pro-only tiles stay visible but locked
 when an asset has no active subscription, matching the owner-controlled policy
 on the web product.
 
+### Screenshots
+
+CI boots a simulator and captures every tab on each push to `main`. Grab them
+from the Actions run's `screenshots` artifact:
+
+```bash
+gh run download --name screenshots
+```
+
+The app opens directly to a tab given `-startTab <name>`, which is how the
+capture drives it:
+
+```bash
+# locally, in Xcode's scheme arguments
+-startTab assets
+```
+
 ## Architecture
 
 ```
@@ -76,7 +93,20 @@ builder init
 builder ios build
 ```
 
-`builder.json` is already set up. See the repo README for signing and TestFlight.
+`builder.json` is already set up. See that repo's README for signing and
+TestFlight.
+
+### Local checks
+
+There is no Swift toolchain on Windows, so `Scripts/swift-lint.mjs` is the gate
+you can actually run:
+
+```bash
+npm run lint
+```
+
+To compile without a Mac, push and read the CI result — the build job is the
+real type check.
 
 ## Production integration
 
