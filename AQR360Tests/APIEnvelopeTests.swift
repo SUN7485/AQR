@@ -54,6 +54,27 @@ final class APIEnvelopeTests: XCTestCase {
         try JSONDecoder().decode(APIEnvelope<[Country]>.self, from: try loadFixture())
     }
 
+    // MARK: - Fixture hygiene
+
+    /// The fixture must be the response shape itself, with provenance under a
+    /// key `Decodable` ignores.
+    ///
+    /// This exists because the first version nested the response under `body`,
+    /// which is why five tests failed with `Key 'data' not found`. The decoder
+    /// was right and the fixture was wrong. Keeping the envelope at the top
+    /// level means a future wrap fails here with one clear message instead of
+    /// five confusing ones.
+    func testFixtureHasEnvelopeAtTopLevel() throws {
+        let object = try XCTUnwrap(
+            try JSONSerialization.jsonObject(with: try Self.loadFixture()) as? [String: Any])
+
+        for key in ["data", "isSuccess", "errors", "responseTime", "responseStatus"] {
+            XCTAssertNotNil(object[key], "fixture is missing top-level '\(key)'")
+        }
+        XCTAssertNil(object["body"],
+                     "response must not be nested under 'body'; that broke decoding once already")
+    }
+
     // MARK: - Envelope
 
     func testEnvelopeShape() throws {
