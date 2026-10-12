@@ -13,7 +13,7 @@ struct AssetsView: View {
             ScrollView {
                 LazyVStack(spacing: Metric.m) {
                     ForEach(store.assets) { asset in
-                        NavigationLink(value: AssetsRoute.asset(asset, opening: nil)) {
+                        NavigationLink(value: AssetsRoute.asset(asset)) {
                             AssetCard(asset: asset)
                         }
                         .buttonStyle(.plain)
@@ -29,8 +29,8 @@ struct AssetsView: View {
             // NavigationStacks.
             .navigationDestination(for: AssetsRoute.self) { route in
                 switch route {
-                case .asset(let asset, let tool):
-                    AssetWorkspaceView(asset: asset, initialTool: tool)
+                case .asset(let asset):
+                    AssetWorkspaceView(asset: asset)
                 case .tool(let tool):
                     ProToolView(tool: tool)
                 }

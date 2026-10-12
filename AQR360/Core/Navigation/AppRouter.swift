@@ -35,7 +35,7 @@ enum AppTab: String, Hashable, CaseIterable, Identifiable {
 /// One route type for the whole stack, so pushing an asset and then a Pro tool
 /// is a single continuous back-stack rather than a nested `NavigationStack`.
 enum AssetsRoute: Hashable {
-    case asset(Asset, opening: AssetWorkspaceView.Tool?)
+    case asset(Asset)
     case tool(AssetWorkspaceView.Tool)
 }
 
@@ -95,7 +95,14 @@ final class AppRouter {
 
         if let i = requestedAssetIndex, store.assets.indices.contains(i) {
             tab = .assets
-            assetsPath = [.asset(store.assets[i], opening: requestedTool)]
+            // The workspace and the tool are two entries on one stack, not a
+            // parameter on the workspace. Passing the tool through
+            // `AssetsRoute.asset(_, opening:)` left it unused, and every tool
+            // capture silently rendered the workspace instead.
+            assetsPath = [.asset(store.assets[i])]
+            if let requestedTool {
+                assetsPath.append(.tool(requestedTool))
+            }
         }
     }
 

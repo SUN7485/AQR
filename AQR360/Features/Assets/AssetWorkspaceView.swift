@@ -10,9 +10,6 @@ struct AssetWorkspaceView: View {
 
     let asset: Asset
 
-    /// Pro tool to open immediately. Used by CI's `-startTool` launch argument.
-    var initialTool: Tool?
-
     enum Tool: String, CaseIterable, Identifiable {
         case manage, contracts, responsibility, vault, services, market
 
