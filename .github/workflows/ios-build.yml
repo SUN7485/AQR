@@ -11,7 +11,22 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  SCHEME: AQR360
+  BUNDLE_ID: com.aqr360.app
+  DERIVED: ${{ runner.temp }}/build
+
 jobs:
+  lint:
+    name: Structural lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm run lint
+
   build:
     name: Build (simulator)
     # macOS 26 ships Xcode 26.x with the iOS 26 SDK. Liquid Glass
@@ -19,15 +34,15 @@ jobs:
     # Xcode 16 SDK, and `#available` cannot gate symbols the SDK lacks —
     # so the runner has to carry a matching SDK.
     runs-on: macos-26
+    needs: lint
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Show toolchain
+      - name: Toolchain
         run: |
           xcodebuild -version
-          swift --version
-          xcodebuild -showsdks | grep -i iphone
+          xcodebuild -showsdks | grep -i iphonesimulator | tail -1
 
       - name: List schemes
         run: xcodebuild -list -project AQR360.xcodeproj
@@ -39,29 +54,101 @@ jobs:
           set -o pipefail
           xcodebuild build \
             -project AQR360.xcodeproj \
-            -scheme AQR360 \
+            -scheme "$SCHEME" \
             -destination 'generic/platform=iOS Simulator' \
             -configuration Debug \
+            -derivedDataPath "$DERIVED" \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
-            | xcbeautify || exit $?
+            | xcbeautify
 
       - name: Upload app bundle
-        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: AQR360-simulator-build
-          path: ${{ runner.temp }}/Build/Products/Debug-iphonesimulator/*.app
+          path: ${{ env.DERIVED }}/Build/Products/Debug-iphonesimulator/${{ env.SCHEME }}.app
           retention-days: 7
-          if-no-files-found: ignore
+          if-no-files-found: error
 
-  lint:
-    name: Structural lint
-    runs-on: ubuntu-latest
+  screenshots:
+    name: Screenshots
+    runs-on: macos-26
+    needs: build
+    if: github.ref == 'refs/heads/main'
+
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+
+      - name: Download build
+        uses: actions/download-artifact@v4
         with:
-          node-version: 22
-      - run: npm run lint
+          name: AQR360-simulator-build
+          path: app
+
+      - name: Build
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project AQR360.xcodeproj \
+            -scheme "$SCHEME" \
+            -destination 'generic/platform=iOS Simulator' \
+            -configuration Debug \
+            -derivedDataPath "$DERIVED" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            | xcbeautify
+
+      - name: Boot simulator
+        run: |
+          DEVICE=$(xcrun simctl list devices available \
+            | grep -E 'iPhone 17 Pro \(' | head -1 | grep -oE '[0-9A-F-]{36}')
+          if [ -z "$DEVICE" ]; then
+            DEVICE=$(xcrun simctl list devices available | grep -E 'iPhone' | head -1 | grep -oE '[0-9A-F-]{36}')
+          fi
+          echo "DEVICE=$DEVICE" >> "$GITHUB_ENV"
+          echo "$DEVICE" > /tmp/simdevice
+          xcrun simctl boot "$DEVICE"
+          xcrun simctl bootstatus "$DEVICE" -b
+          open -a Simulator
+          xcrun simctl status_bar "$DEVICE" override \
+            --time "9:41" --batteryState charged --batteryLevel 100 \
+            --wifiBars 3 --cellularBars 4
+
+      - name: Install
+        run: xcrun simctl install "$DEVICE" "$DERIVED/Build/Products/Debug-iphonesimulator/$SCHEME.app"
+
+      # One screenshot per tab. The app opens straight to the tab named by
+      # -startTab, so this drives the real app rather than simulating taps.
+      - name: Capture tabs
+        run: |
+          mkdir -p screenshots
+          for TAB in home market assets services account; do
+            echo "::group::$TAB"
+            xcrun simctl terminate "$DEVICE" "$BUNDLE_ID" 2>/dev/null || true
+            xcrun simctl launch "$DEVICE" "$BUNDLE_ID" -startTab "$TAB"
+            sleep 6
+            xcrun simctl io "$DEVICE" screenshot "screenshots/$TAB.png"
+            echo "::endgroup::"
+          done
+
+      - name: Upload screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots
+          path: screenshots/*.png
+          retention-days: 14
+
+      - name: Summary
+        run: |
+          {
+            echo "## Screenshots"
+            echo
+            for f in screenshots/*.png; do
+              echo "### $(basename "$f" .png)"
+              echo
+              echo "![$f](https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}/screenshots/$(basename "$f"))"
+              echo
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
