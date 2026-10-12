@@ -49,17 +49,21 @@ extension View {
             }
         }
     }
-}
 
-/// Groups related glass shapes so they blend and morph together.
-///
-/// Falls back to a plain `Group` below iOS 26 — the grouped children simply
-/// render without glass.
-@ViewBuilder
-func aqGlassGroup<Content: View>(spacing: CGFloat, @ViewBuilder content: () -> Content) -> some View {
-    if #available(iOS 26, *) {
-        GlassEffectContainer(spacing: spacing) { content() }
-    } else {
-        content()
+    /// Groups related glass shapes so they blend and morph together.
+    ///
+    /// Declared as a `View` method rather than a free function: under Swift 6
+    /// strict concurrency a free function taking a non-`Sendable`
+    /// result-builder closure is a data-race diagnostic. The method form
+    /// inherits the caller's isolation.
+    ///
+    /// Below iOS 26 the children render plainly, without glass.
+    @ViewBuilder
+    func aqGlassGroup<Content: View>(spacing: CGFloat, @ViewBuilder content: () -> Content) -> some View {
+        if #available(iOS 26, *) {
+            GlassEffectContainer(spacing: spacing) { content() }
+        } else {
+            content()
+        }
     }
 }

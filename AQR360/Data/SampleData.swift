@@ -86,7 +86,7 @@ enum SampleData {
             VaultDocument(id: uuid(43), title: "Q2 Service Receipts Bundle", kind: .receipt,
                           sizeLabel: "5.1 MB", updated: calendar.date(byAdding: .month, value: -2, to: base)!, isSecure: false),
             VaultDocument(id: uuid(44), title: "Lift Inspection Report 2026", kind: .maintenance,
-                          sizeLabel: "1.1 MB", updated: calendar.date(byAdding: .week, value: -3, to: base)!, isSecure: false),
+                          sizeLabel: "1.1 MB", updated: calendar.date(byAdding: .day, value: -21, to: base)!, isSecure: false),
         ]
     }
 
