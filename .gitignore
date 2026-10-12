@@ -32,5 +32,12 @@ ios-signing*.key
 .env.*
 *.xcconfig.local
 
-# Agent skill working dirs are tracked; their scratch output is not
+# Agent skills working dirs are tracked; their scratch output is not
 .claude/settings.local.json
+
+# Only .agents/skills is the canonical, tracked copy of the vendored Swift/iOS
+# skills. .claude/skills and agent/skills are generated mirrors for other
+# assistants — regenerate them with:
+#   npx skills add dpearson2699/swift-ios-skills --all
+.claude/skills/
+agent/skills/

@@ -96,9 +96,28 @@ The demo deliberately stops at the UI layer. When wiring the real backend:
 
 ## Agent skills
 
-This project carries the [Swift/iOS agent skills](https://github.com/dpearson2699/swift-ios-skills)
-in `.agents/skills` (mirrored to `.claude/skills` and `agent/skills` for other
-assistants). 86 skills covering SwiftUI, SwiftData, StoreKit, networking,
-accessibility and App Store submission.
+This project vendors the [Swift/iOS agent skills](https://github.com/dpearson2699/swift-ios-skills)
+— 86 skills covering SwiftUI, SwiftData, StoreKit, networking, authentication,
+push notifications, accessibility and App Store submission.
 
-`npx skills check` / `npx skills update` keeps them current.
+`.agents/skills` is the canonical tracked copy. `.claude/skills` and
+`agent/skills` are generated mirrors for other assistants and are not
+committed. Regenerate them with:
+
+```bash
+npx skills add dpearson2699/swift-ios-skills --all
+npx skills check      # report drift
+npx skills update     # pull upstream changes
+```
+
+## CI
+
+`.github/workflows/ios-build.yml` runs two jobs on every push:
+
+- **Build (simulator)** — `xcodebuild` against an iOS Simulator destination on
+  `macos-15`. Signless, so it needs no Apple Developer account, and it catches
+  every compile and link error.
+- **Structural lint** — `Scripts/swift-lint.mjs` on `ubuntu-latest`.
+
+The build job is the real type check. If you add a file that does not compile,
+that job goes red before anyone opens Xcode.

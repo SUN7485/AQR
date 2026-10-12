@@ -1,0 +1,69 @@
+name: iOS Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build (simulator)
+    runs-on: macos-15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: |
+          echo "::group::Available Xcode versions"
+          ls /Applications | grep -i '^Xcode' || true
+          echo "::endgroup::"
+          sudo xcode-select -s /Applications/Xcode_16.4.app
+
+      - name: Show toolchain
+        run: |
+          xcodebuild -version
+          swift --version
+
+      - name: List schemes
+        run: xcodebuild -list -project AQR360.xcodeproj
+
+      # Signless simulator build: catches every compile and link error without
+      # needing an Apple Developer account or a provisioning profile.
+      - name: Build
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project AQR360.xcodeproj \
+            -scheme AQR360 \
+            -destination 'generic/platform=iOS Simulator' \
+            -configuration Debug \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            | xcbeautify || exit $?
+
+      - name: Upload app bundle
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: AQR360-simulator-build
+          path: ${{ runner.temp }}/Build/Products/Debug-iphonesimulator/*.app
+          retention-days: 7
+          if-no-files-found: ignore
+
+  lint:
+    name: Structural lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm run lint
