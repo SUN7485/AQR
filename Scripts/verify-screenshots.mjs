@@ -177,14 +177,23 @@ for (let i = 0; i < present.length; i++) {
     const sameBytes = hashes.get(a) === hashes.get(b);
     const sigA = decoded.get(a), sigB = decoded.get(b);
     const d = (sigA && sigB) ? distance(sigA.norm, sigB.norm) : 1;
-    const wDiff = (sigA && sigB) ? Math.abs(sigA.whiteFrac - sigB.whiteFrac) : 1;
 
-    if (sameBytes || d < 0.012 || wDiff < 0.002) {
+    // Threshold chosen from measurement, not taste. Across two runs:
+    //   true duplicates  d = 0.0000 - 0.0006
+    //   distinct screens d = 0.042 - 0.269
+    // 0.01 sits ~16x above the duplicates and ~4x below the nearest
+    // legitimate pair, so it separates with margin on both sides.
+    //
+    // An earlier version also demanded near-identical white-pixel fractions.
+    // That was wrong: two genuinely different screens can coincidentally
+    // share an overall white fraction. It produced a false positive on
+    // assets.png vs matrix.png (d=0.0481, w=0.0020) in run 38288497522.
+    if (sameBytes || d < 0.01) {
       fail(`${a} and ${b} look like the same screen ` +
-           `(bytes ${sameBytes ? 'identical' : 'differ'}, luma distance ${d.toFixed(4)}, ` +
-           `white ${wDiff.toFixed(4)}) — a requested route may not have navigated`);
+           `(bytes ${sameBytes ? 'identical' : 'differ'}, luma distance ${d.toFixed(4)}) ` +
+           `— a requested route may not have navigated`);
     } else {
-      console.log(`    ok  ${a} <-> ${b}  d=${d.toFixed(3)} w=${wDiff.toFixed(3)}`);
+      console.log(`    ok  ${a} <-> ${b}  d=${d.toFixed(3)}`);
     }
   }
 }
