@@ -31,7 +31,7 @@
   header p{margin:4px 0 0; font-size:13px; opacity:.85}
   .pills{display:flex; gap:6px; flex-wrap:wrap; margin-top:10px}
   .pill{
-    font-size:11px; font-weight:700; letter-spacing:.02em;
+    font-size:11px; font-weight:700;
     padding:4px 9px; border-radius:999px;
     background:rgba(255,255,255,.18); border:1px solid rgba(255,255,255,.22);
   }
@@ -43,7 +43,9 @@
     background:var(--tabbar); backdrop-filter:blur(16px);
     border-bottom:1px solid var(--line);
     -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
   }
+  nav::-webkit-scrollbar{display:none}
   nav button{
     flex:0 0 auto; border:0; cursor:pointer;
     font:inherit; font-size:13px; font-weight:600;
@@ -55,34 +57,58 @@
     background:linear-gradient(135deg,var(--indigo),var(--azure));
   }
   nav button:focus-visible{outline:2px solid var(--azure); outline-offset:2px}
+  nav .sep{flex:0 0 auto; width:1px; background:var(--line); margin:6px 4px}
 
-  main{padding:16px 12px 28px; max-width:1000px; margin:0 auto}
+  main{padding:16px 12px 28px; max-width:1100px; margin:0 auto}
   figure{margin:0}
-  .shot{
-    width:100%; height:auto; display:block;
-    border-radius:22px; border:1px solid var(--line);
-    background:var(--card);
-    box-shadow:0 12px 34px rgba(15,23,42,.14);
+  .shotwrap{
+    border-radius:22px; border:1px solid var(--line); background:var(--card);
+    box-shadow:0 12px 34px rgba(15,23,42,.14); overflow:hidden;
+    /* The capture is a tall phone screen. Constrain the height and let it
+       scroll, so long screens like the Pro workspace are inspectable without
+       zooming out to illegibility. */
+    max-height:72vh; overflow-y:auto; overscroll-behavior:contain;
+    -webkit-overflow-scrolling:touch;
   }
+  .shot{width:100%; height:auto; display:block}
   figcaption{margin-top:10px; font-size:13px; color:var(--muted); text-align:center}
   figcaption strong{color:var(--ink)}
+  .hint{margin:8px 0 0; font-size:12px; color:var(--muted); text-align:center}
 
-  .note{
-    max-width:1000px; margin:18px auto 0; padding:14px 16px;
+  .card{
+    max-width:1100px; margin:16px auto 0; padding:16px;
     background:var(--card); border:1px solid var(--line); border-radius:14px;
     font-size:13px; color:var(--muted);
   }
-  .note h2{margin:0 0 8px; font-size:14px; color:var(--ink)}
-  .note ul{margin:8px 0 0; padding-left:18px}
-  .note li{margin:4px 0}
-  .note code{background:rgba(24,136,248,.12); padding:1px 5px; border-radius:5px; font-size:12px}
+  .card h2{margin:0 0 10px; font-size:15px; color:var(--ink)}
+  .card h3{margin:14px 0 6px; font-size:13px; color:var(--ink)}
+  .card ul{margin:6px 0 0; padding-left:18px}
+  .card li{margin:5px 0}
+  .card code{background:rgba(24,136,248,.12); padding:1px 5px; border-radius:5px; font-size:12px}
+
+  table{width:100%; border-collapse:collapse; margin-top:8px; font-size:13px}
+  th,td{text-align:left; padding:7px 8px; border-bottom:1px solid var(--line); vertical-align:top}
+  th{color:var(--ink); font-weight:700}
+  td.sim{color:var(--muted)}
+  td.real{color:#166534; font-weight:600}
+  @media (prefers-color-scheme: dark){ td.real{color:#4ade80} }
+  .tag{
+    display:inline-block; font-size:11px; font-weight:700; padding:1px 7px;
+    border-radius:999px;
+  }
+  .tag.native{background:#DCFCE7; color:#166534}
+  .tag.sim{background:#E2E8F0; color:#475569}
+  @media (prefers-color-scheme: dark){
+    .tag.native{background:#14532D; color:#BBF7D0}
+    .tag.sim{background:#334155; color:#CBD5E1}
+  }
 
   .missing{
     padding:44px 20px; text-align:center; color:var(--muted);
-    background:var(--card); border:1px dashed var(--line); border-radius:18px;
+    border:1px dashed var(--line); border-radius:18px;
   }
   footer{
-    max-width:1000px; margin:0 auto; padding:0 12px 32px;
+    max-width:1100px; margin:0 auto; padding:0 12px 32px;
     font-size:12px; color:var(--muted); text-align:center;
   }
 </style>
@@ -104,94 +130,169 @@
 
 <main id="stage"></main>
 
-<section class="note">
-  <h2>What you are looking at</h2>
+<section class="card">
+  <h2>What is real and what is simulated</h2>
   <p style="margin:0">
-    These are not mockups. Each image is a screenshot of the actual app binary,
-    built by GitHub Actions on a macOS runner and launched in the iOS Simulator.
-    Tap the tabs to switch screens.
+    Every image below is a screenshot of the actual app binary, built by GitHub
+    Actions on a macOS runner and launched in the iOS Simulator. Nothing here is
+    an HTML mockup.
   </p>
-  <ul>
-    <li><strong>Verified:</strong> the app compiles and runs on the iOS Simulator
-      on every push to <code>main</code>.</li>
-    <li><strong>Not verified:</strong> behaviour on a physical iPhone or iPad.
-      No iOS hardware has been used.</li>
-    <li><strong>Demo data:</strong> every figure is illustrative. The app shows a
-      banner on Home while it is running against fixtures.</li>
-  </ul>
+  <table>
+    <thead>
+      <tr><th>Aspect</th><th>Status</th><th>Notes</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Visual design</td>
+        <td class="real"><span class="tag native">Native</span></td>
+        <td>Real SwiftUI render. Layout, spacing, type and colour are the app's own.</td>
+      </tr>
+      <tr>
+        <td>Navigation between screens</td>
+        <td class="real"><span class="tag native">Native</span></td>
+        <td>The tab bar and the Pro workspace entries below push real
+            <code>NavigationStack</code> routes.</td>
+      </tr>
+      <tr>
+        <td>Scrolling a screen</td>
+        <td class="sim"><span class="tag sim">Simulated</span></td>
+        <td>The capture is a static image. Scrolling here moves the image, not
+            app state.</td>
+      </tr>
+      <tr>
+        <td>Typing, search, filters, booking</td>
+        <td class="sim"><span class="tag sim">Not available</span></td>
+        <td>These need a live binary. They are implemented in the app but cannot
+            be exercised from this page.</td>
+      </tr>
+      <tr>
+        <td>Content</td>
+        <td class="sim"><span class="tag sim">Fixtures</span></td>
+        <td>Illustrative figures. The app shows a banner on Home while it runs
+            against them.</td>
+      </tr>
+      <tr>
+        <td>Physical-device behaviour</td>
+        <td class="sim"><span class="tag sim">Unverified</span></td>
+        <td>No iPhone or iPad has run this. Real-device checks such as Dynamic
+            Type, safe areas and haptics are untested.</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<section class="card">
+  <h2>Why screenshots and not a web rebuild</h2>
+  <p style="margin:0">
+    A hand-written HTML version of these screens would look identical today and
+    silently diverge from the SwiftUI source within a week. Serving captured
+    output from the real build makes that impossible. The preview regenerates on
+    every push to <code>main</code>, from the same commit as the app.
+  </p>
 </section>
 
 <footer>
-  Screenshots regenerate automatically on each push to
-  <code>main</code>. Built from the same commit as the app.
+  Screenshots regenerate automatically on each push to <code>main</code>.
+  Built from the same commit as the app.
 </footer>
 
 <script>
 const SCREENS = [
-  { id: "home",     label: "Home",     title: "Home",
-    blurb: "Portfolio roll-up, quick actions, active tickets and fresh market listings." },
-  { id: "market",   label: "Market",   title: "Market",
-    blurb: "Searchable and filterable listings with category chips and agent attribution." },
-  { id: "assets",   label: "Assets",   title: "My Assets",
-    blurb: "Owned properties with income, expenses and occupancy." },
-  { id: "services", label: "Services", title: "Services",
-    blurb: "Service catalogue, ticket tracking with stage advancement, and booking." },
-  { id: "account",  label: "Account",  title: "Account",
-    blurb: "Profile, AQR360 Points and payment methods." }
+  { id:"home", label:"Home", group:"main", title:"Home",
+    blurb:"Portfolio roll-up, quick actions, active tickets and fresh market listings." },
+  { id:"market", label:"Market", group:"main", title:"Market",
+    blurb:"Searchable and filterable listings with category chips and agent attribution." },
+  { id:"listing", label:"Listing detail", group:"main", title:"Listing detail",
+    blurb:"Full listing view with price, specification and agent card." },
+  { id:"assets", label:"Assets", group:"main", title:"My Assets",
+    blurb:"Owned properties with income, expenses and occupancy." },
+  { id:"services", label:"Services", group:"main", title:"Services",
+    blurb:"Service catalogue, ticket tracking with stage advancement, and booking." },
+  { id:"account", label:"Account", group:"main", title:"Account",
+    blurb:"Profile, AQR360 Points and payment methods." },
+
+  { id:"workspace", label:"Pro workspace", group:"pro", title:"AQR360 Pro workspace",
+    blurb:"The six Pro capabilities, tenant access and announcements for one asset." },
+  { id:"contracts", label:"Contracts", group:"pro", title:"Pro — Contracts",
+    blurb:"Lease and maintenance contracts, flagged as renewals come due." },
+  { id:"vault", label:"Vault", group:"pro", title:"Pro — Document vault",
+    blurb:"Title deeds, tenant agreements and receipts, with secure items marked." },
+  { id:"matrix", label:"Responsibility", group:"pro", title:"Pro — Responsibility matrix",
+    blurb:"The owner-defined approver and payee routing for every Pro service." }
+];
+
+const GROUPS = [
+  { id:"main", label:"Main tabs" },
+  { id:"pro",  label:"AQR360 Pro" }
 ];
 
 const tabs  = document.getElementById("tabs");
 const stage = document.getElementById("stage");
 
-// Render tabs. A missing screenshot is shown inline rather than as a broken image.
-SCREENS.forEach((s, i) => {
-  const b = document.createElement("button");
-  b.type = "button";
-  b.role = "tab";
-  b.textContent = s.label;
-  b.setAttribute("aria-selected", i === 0 ? "true" : "false");
-  b.addEventListener("click", () => select(i));
-  tabs.appendChild(b);
+/* Nav: a group label, then that group's screens, with a separator between. */
+GROUPS.forEach(function(g, gi) {
+  if (gi > 0) {
+    const sep = document.createElement("span");
+    sep.className = "sep";
+    tabs.appendChild(sep);
+  }
+  SCREENS.filter(s => s.group === g.id).forEach(function(s, i) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.setAttribute("role", "tab");
+    b.textContent = s.label;
+    b.setAttribute("aria-selected", "false");
+    b.dataset.id = s.id;
+    b.addEventListener("click", function() { select(s.id); });
+    tabs.appendChild(b);
+  });
 });
 
-function select(i) {
-  const s = SCREENS[i];
+function select(id) {
+  const s = SCREENS.find(x => x.id === id) || SCREENS[0];
 
-  [...tabs.children].forEach((b, j) =>
-    b.setAttribute("aria-selected", j === i ? "true" : "false"));
+  Array.prototype.forEach.call(tabs.querySelectorAll("button"), function(b) {
+    b.setAttribute("aria-selected", b.dataset.id === s.id ? "true" : "false");
+  });
 
   stage.innerHTML = "";
 
   const fig = document.createElement("figure");
 
+  const wrap = document.createElement("div");
+  wrap.className = "shotwrap";
+
   const img = document.createElement("img");
   img.className = "shot";
   img.alt = s.title + " screen of the AQR360 iOS app";
   img.decoding = "async";
-  img.loading = "eager";
   img.src = "screenshots/" + s.id + ".png";
 
-  img.addEventListener("error", () => {
+  img.addEventListener("error", function() {
     const miss = document.createElement("div");
     miss.className = "missing";
     miss.textContent = "No screenshot captured for " + s.title +
                        " yet. It appears after the next successful CI run.";
-    fig.replaceChildren(miss);
+    wrap.replaceChildren(miss);
   });
+
+  wrap.appendChild(img);
 
   const cap = document.createElement("figcaption");
   cap.innerHTML = "<strong>" + s.title + "</strong> &mdash; " + s.blurb;
 
-  fig.append(img, cap);
+  const hint = document.createElement("p");
+  hint.className = "hint";
+  hint.textContent = "Scroll inside the image to inspect the full screen.";
+
+  fig.append(wrap, cap, hint);
   stage.appendChild(fig);
   window.scrollTo({ top: 0, behavior: "instant" });
 }
 
-// Deep link: preview/index.html#services opens straight to a tab.
 function fromHash() {
   const id = decodeURIComponent(location.hash.replace(/^#/, ""));
-  const i = SCREENS.findIndex(s => s.id === id);
-  select(i === -1 ? 0 : i);
+  select(SCREENS.some(s => s.id === id) ? id : SCREENS[0].id);
 }
 window.addEventListener("hashchange", fromHash);
 fromHash();

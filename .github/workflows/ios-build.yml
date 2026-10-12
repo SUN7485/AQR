@@ -143,26 +143,46 @@ jobs:
           bounded 120 xcrun simctl install "$DEVICE" "$APP"
           echo "installed $BUNDLE_ID"
 
-      # One screenshot per tab. The app opens straight to the tab named by
-      # -startTab, so this drives the real app rather than simulating taps.
+      # Screens are captured by launching the real app with a launch argument
+      # that opens it straight onto the target screen. That drives the actual
+      # binary rather than simulating taps, so images cannot drift from source.
+      #
       # Every simctl call is bounded: a hung `io screenshot` would otherwise
       # stall the job until the 6h job timeout.
-      - name: Capture tabs
+      - name: Capture screens
         run: |
           set -uo pipefail
           bounded() { perl -e 'alarm shift; exec @ARGV' "$@"; }
           mkdir -p screenshots
-          for TAB in home market assets services account; do
+
+          capture() {
+            local NAME="$1"; shift
             xcrun simctl terminate "$DEVICE" "$BUNDLE_ID" 2>/dev/null || true
-            bounded 60 xcrun simctl launch "$DEVICE" "$BUNDLE_ID" -startTab "$TAB" \
-              || { echo "launch failed for $TAB"; continue; }
-            sleep 7
-            if bounded 90 xcrun simctl io "$DEVICE" screenshot "screenshots/$TAB.png"; then
-              echo "captured $TAB"
+            if bounded 60 xcrun simctl launch "$DEVICE" "$BUNDLE_ID" "$@"; then
+              sleep 7
+              if bounded 90 xcrun simctl io "$DEVICE" screenshot "screenshots/$NAME.png"; then
+                echo "captured $NAME"
+              else
+                echo "screenshot FAILED for $NAME"
+              fi
             else
-              echo "screenshot FAILED for $TAB"
+              echo "launch failed for $NAME"
             fi
-          done
+          }
+
+          capture home     -startTab home
+          capture market   -startTab market
+          capture assets   -startTab assets
+          capture services -startTab services
+          capture account  -startTab account
+
+          # Pro workspace and its sub-screens.
+          capture workspace -startAsset 0
+          capture contracts -startAsset 0 -startTool contracts
+          capture vault     -startAsset 0 -startTool vault
+          capture matrix    -startAsset 0 -startTool responsibility
+          capture listing   -startListing 0
+
           ls -l screenshots || true
 
       - name: Upload screenshots

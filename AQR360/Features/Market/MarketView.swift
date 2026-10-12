@@ -2,9 +2,10 @@ import SwiftUI
 
 struct MarketView: View {
     @Environment(AppStore.self) private var store
+    @Environment(AppRouter.self) private var router
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $router.marketPath) {
             Group {
                 if store.isLoading {
                     ProgressView()
@@ -219,4 +220,5 @@ struct ListingDetailView: View {
 #Preview("Market") {
     MarketView()
         .environment(AQRFixture.store)
+        .environment(AppRouter())
 }

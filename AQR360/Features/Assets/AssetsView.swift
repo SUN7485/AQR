@@ -2,13 +2,14 @@ import SwiftUI
 
 struct AssetsView: View {
     @Environment(AppStore.self) private var store
+    @Environment(AppRouter.self) private var router
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $router.assetsPath) {
             ScrollView {
                 LazyVStack(spacing: Metric.m) {
                     ForEach(store.assets) { asset in
-                        NavigationLink(value: asset) {
+                        NavigationLink(value: AssetsRoute.asset(asset, opening: nil)) {
                             AssetCard(asset: asset)
                         }
                         .buttonStyle(.plain)
@@ -19,8 +20,16 @@ struct AssetsView: View {
             }
             .background(Brand.canvas)
             .navigationTitle("My Assets")
-            .navigationDestination(for: Asset.self) { asset in
-                AssetWorkspaceView(asset: asset)
+            // One destination for the whole stack, so pushing an asset and then
+            // a Pro tool is one continuous back stack rather than nesting
+            // NavigationStacks.
+            .navigationDestination(for: AssetsRoute.self) { route in
+                switch route {
+                case .asset(let asset, let tool):
+                    AssetWorkspaceView(asset: asset, initialTool: tool)
+                case .tool(let tool):
+                    ProToolView(tool: tool)
+                }
             }
         }
     }
@@ -73,4 +82,5 @@ private struct AssetCard: View {
 #Preview("Assets") {
     AssetsView()
         .environment(AQRFixture.store)
+        .environment(AppRouter())
 }

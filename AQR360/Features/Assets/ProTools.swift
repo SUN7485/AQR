@@ -1,5 +1,20 @@
 import SwiftUI
 
+/// Renders a Pro tool screen. Lives here so the Assets stack's
+/// `navigationDestination` and the workspace preview share one mapping.
+struct ProToolView: View {
+    let tool: AssetWorkspaceView.Tool
+
+    var body: some View {
+        switch tool {
+        case .contracts: ContractsView()
+        case .responsibility: ResponsibilityMatrixView()
+        case .vault: VaultView()
+        case .manage, .services, .market: EmptyView()
+        }
+    }
+}
+
 /// Pro → Contracts. Renewal windows and payment terms for the selected asset.
 struct ContractsView: View {
     private let contracts = SampleData.contracts()

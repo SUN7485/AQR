@@ -6,8 +6,12 @@ import SwiftUI
 /// subscription, mirroring the owner-controlled policy on the web product.
 struct AssetWorkspaceView: View {
     @Environment(\.configuration) private var configuration
+    @Environment(AppRouter.self) private var router
 
     let asset: Asset
+
+    /// Pro tool to open immediately. Used by CI's `-startTool` launch argument.
+    var initialTool: Tool?
 
     enum Tool: String, CaseIterable, Identifiable {
         case manage, contracts, responsibility, vault, services, market
@@ -75,14 +79,6 @@ struct AssetWorkspaceView: View {
         .background(Brand.canvas)
         .navigationTitle(asset.name)
         .navigationBarTitleDisplayMode(.inline)
-        .navigationDestination(for: Tool.self) { tool in
-            switch tool {
-            case .contracts: ContractsView()
-            case .responsibility: ResponsibilityMatrixView()
-            case .vault: VaultView()
-            case .manage, .services, .market: EmptyView()
-            }
-        }
     }
 
     // MARK: - Sections
@@ -123,8 +119,10 @@ struct AssetWorkspaceView: View {
                 ForEach(Tool.allCases) { tool in
                     let isLocked = tool.requiresPro && !asset.isProSubscribed
 
-                    if destination(for: tool) != nil, !isLocked {
-                        NavigationLink(value: tool) {
+                    if toolOpensScreen(tool), !isLocked {
+                        Button {
+                            router.open(tool)
+                        } label: {
                             ProToolTile(tool: tool, isLocked: false)
                         }
                         .buttonStyle(.plain)
@@ -138,10 +136,10 @@ struct AssetWorkspaceView: View {
 
     /// Pro tools that open a dedicated screen. Manage and Services are inline
     /// summaries in this demo build.
-    private func destination(for tool: Tool) -> Tool? {
+    private func toolOpensScreen(_ tool: Tool) -> Bool {
         switch tool {
-        case .contracts, .responsibility, .vault: tool
-        case .manage, .services, .market: nil
+        case .contracts, .responsibility, .vault: true
+        case .manage, .services, .market: false
         }
     }
 
@@ -295,10 +293,19 @@ private struct ProToolTile: View {
     NavigationStack {
         AssetWorkspaceView(asset: SampleData.assets()[0])
     }
+    .environment(AppRouter())
 }
 
 #Preview("Standard asset") {
     NavigationStack {
         AssetWorkspaceView(asset: SampleData.assets()[2])
     }
+    .environment(AppRouter())
+}
+
+#Preview("Pro tool") {
+    NavigationStack {
+        ProToolView(tool: .contracts)
+    }
+    .environment(AppRouter())
 }
