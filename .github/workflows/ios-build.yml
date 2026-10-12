@@ -200,6 +200,13 @@ jobs:
       # The page serves the real captured pixels with a tab bar rather than a
       # hand-written HTML reimplementation — that way the preview cannot drift
       # from the SwiftUI source, which is the whole point.
+      # Existence of a PNG proves nothing. In run 38284996589 all ten files were
+      # written and five were the same wrong screen, because a duplicated router
+      # instance meant the route never navigated. This validates screen identity
+      # from image content and fails the job when two screens collide.
+      - name: Verify screenshot content
+        run: node Scripts/verify-screenshots.mjs screenshots
+
       - name: Assemble preview site
         if: always()
         run: |

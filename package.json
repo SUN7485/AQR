@@ -7,6 +7,7 @@
   "scripts": {
     "lint": "node Scripts/swift-lint.mjs",
     "lint:check": "node Scripts/swift-lint.mjs && echo OK",
+    "verify:screenshots": "node Scripts/verify-screenshots.mjs",
     "skills:check": "skills check",
     "skills:update": "skills update"
   }
