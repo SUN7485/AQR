@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AQR360 for iOS — device preview</title>
+<style>
+  :root{
+    --navy:#080070; --indigo:#303FCE; --azure:#1888F8;
+    --ink:#0f172a; --muted:#64748b; --line:rgba(15,23,42,.10);
+    --card:#fff; --bg:#eef1f6;
+    --tabbar:rgba(255,255,255,.82);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --ink:#e8ecf5; --muted:#94a3b8; --line:rgba(255,255,255,.12);
+           --card:#151a24; --bg:#0b0e14; --tabbar:rgba(21,26,36,.82); }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg); color:var(--ink);
+    font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+
+  header{
+    background:linear-gradient(135deg,var(--navy),var(--indigo) 55%,var(--azure));
+    color:#fff; padding:18px 18px 16px;
+  }
+  header h1{margin:0; font-size:19px; font-weight:800; letter-spacing:-.2px}
+  header p{margin:4px 0 0; font-size:13px; opacity:.85}
+  .pills{display:flex; gap:6px; flex-wrap:wrap; margin-top:10px}
+  .pill{
+    font-size:11px; font-weight:700; letter-spacing:.02em;
+    padding:4px 9px; border-radius:999px;
+    background:rgba(255,255,255,.18); border:1px solid rgba(255,255,255,.22);
+  }
+  .pill.warn{background:#FEF3C7; color:#92400E; border-color:#FDE68A}
+
+  nav{
+    position:sticky; top:0; z-index:10;
+    display:flex; gap:4px; overflow-x:auto; padding:8px 12px;
+    background:var(--tabbar); backdrop-filter:blur(16px);
+    border-bottom:1px solid var(--line);
+    -webkit-overflow-scrolling:touch;
+  }
+  nav button{
+    flex:0 0 auto; border:0; cursor:pointer;
+    font:inherit; font-size:13px; font-weight:600;
+    padding:8px 14px; border-radius:999px;
+    background:transparent; color:var(--muted);
+  }
+  nav button[aria-selected="true"]{
+    color:#fff;
+    background:linear-gradient(135deg,var(--indigo),var(--azure));
+  }
+  nav button:focus-visible{outline:2px solid var(--azure); outline-offset:2px}
+
+  main{padding:16px 12px 28px; max-width:1000px; margin:0 auto}
+  figure{margin:0}
+  .shot{
+    width:100%; height:auto; display:block;
+    border-radius:22px; border:1px solid var(--line);
+    background:var(--card);
+    box-shadow:0 12px 34px rgba(15,23,42,.14);
+  }
+  figcaption{margin-top:10px; font-size:13px; color:var(--muted); text-align:center}
+  figcaption strong{color:var(--ink)}
+
+  .note{
+    max-width:1000px; margin:18px auto 0; padding:14px 16px;
+    background:var(--card); border:1px solid var(--line); border-radius:14px;
+    font-size:13px; color:var(--muted);
+  }
+  .note h2{margin:0 0 8px; font-size:14px; color:var(--ink)}
+  .note ul{margin:8px 0 0; padding-left:18px}
+  .note li{margin:4px 0}
+  .note code{background:rgba(24,136,248,.12); padding:1px 5px; border-radius:5px; font-size:12px}
+
+  .missing{
+    padding:44px 20px; text-align:center; color:var(--muted);
+    background:var(--card); border:1px dashed var(--line); border-radius:18px;
+  }
+  footer{
+    max-width:1000px; margin:0 auto; padding:0 12px 32px;
+    font-size:12px; color:var(--muted); text-align:center;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>AQR360 for iOS</h1>
+  <p>Device preview &mdash; captured from the real SwiftUI build</p>
+  <div class="pills">
+    <span class="pill">Native SwiftUI</span>
+    <span class="pill">iOS 18 target</span>
+    <span class="pill">Currency AED</span>
+    <span class="pill warn">Fixture data, not live records</span>
+  </div>
+</header>
+
+<nav id="tabs" role="tablist" aria-label="Screens"></nav>
+
+<main id="stage"></main>
+
+<section class="note">
+  <h2>What you are looking at</h2>
+  <p style="margin:0">
+    These are not mockups. Each image is a screenshot of the actual app binary,
+    built by GitHub Actions on a macOS runner and launched in the iOS Simulator.
+    Tap the tabs to switch screens.
+  </p>
+  <ul>
+    <li><strong>Verified:</strong> the app compiles and runs on the iOS Simulator
+      on every push to <code>main</code>.</li>
+    <li><strong>Not verified:</strong> behaviour on a physical iPhone or iPad.
+      No iOS hardware has been used.</li>
+    <li><strong>Demo data:</strong> every figure is illustrative. The app shows a
+      banner on Home while it is running against fixtures.</li>
+  </ul>
+</section>
+
+<footer>
+  Screenshots regenerate automatically on each push to
+  <code>main</code>. Built from the same commit as the app.
+</footer>
+
+<script>
+const SCREENS = [
+  { id: "home",     label: "Home",     title: "Home",
+    blurb: "Portfolio roll-up, quick actions, active tickets and fresh market listings." },
+  { id: "market",   label: "Market",   title: "Market",
+    blurb: "Searchable and filterable listings with category chips and agent attribution." },
+  { id: "assets",   label: "Assets",   title: "My Assets",
+    blurb: "Owned properties with income, expenses and occupancy." },
+  { id: "services", label: "Services", title: "Services",
+    blurb: "Service catalogue, ticket tracking with stage advancement, and booking." },
+  { id: "account",  label: "Account",  title: "Account",
+    blurb: "Profile, AQR360 Points and payment methods." }
+];
+
+const tabs  = document.getElementById("tabs");
+const stage = document.getElementById("stage");
+
+// Render tabs. A missing screenshot is shown inline rather than as a broken image.
+SCREENS.forEach((s, i) => {
+  const b = document.createElement("button");
+  b.type = "button";
+  b.role = "tab";
+  b.textContent = s.label;
+  b.setAttribute("aria-selected", i === 0 ? "true" : "false");
+  b.addEventListener("click", () => select(i));
+  tabs.appendChild(b);
+});
+
+function select(i) {
+  const s = SCREENS[i];
+
+  [...tabs.children].forEach((b, j) =>
+    b.setAttribute("aria-selected", j === i ? "true" : "false"));
+
+  stage.innerHTML = "";
+
+  const fig = document.createElement("figure");
+
+  const img = document.createElement("img");
+  img.className = "shot";
+  img.alt = s.title + " screen of the AQR360 iOS app";
+  img.decoding = "async";
+  img.loading = "eager";
+  img.src = "screenshots/" + s.id + ".png";
+
+  img.addEventListener("error", () => {
+    const miss = document.createElement("div");
+    miss.className = "missing";
+    miss.textContent = "No screenshot captured for " + s.title +
+                       " yet. It appears after the next successful CI run.";
+    fig.replaceChildren(miss);
+  });
+
+  const cap = document.createElement("figcaption");
+  cap.innerHTML = "<strong>" + s.title + "</strong> &mdash; " + s.blurb;
+
+  fig.append(img, cap);
+  stage.appendChild(fig);
+  window.scrollTo({ top: 0, behavior: "instant" });
+}
+
+// Deep link: preview/index.html#services opens straight to a tab.
+function fromHash() {
+  const id = decodeURIComponent(location.hash.replace(/^#/, ""));
+  const i = SCREENS.findIndex(s => s.id === id);
+  select(i === -1 ? 0 : i);
+}
+window.addEventListener("hashchange", fromHash);
+fromHash();
+</script>
+</body>
+</html>

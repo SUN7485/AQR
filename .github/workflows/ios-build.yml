@@ -77,6 +77,14 @@ jobs:
     runs-on: macos-26
     needs: build
     if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
 
     steps:
       - uses: actions/checkout@v4
@@ -160,3 +168,28 @@ jobs:
           path: screenshots/*.png
           retention-days: 14
           if-no-files-found: warn
+
+      # Publish the review site. The screenshots are already in hand from the
+      # step above, so this does not re-run a simulator.
+      #
+      # The page serves the real captured pixels with a tab bar rather than a
+      # hand-written HTML reimplementation — that way the preview cannot drift
+      # from the SwiftUI source, which is the whole point.
+      - name: Assemble preview site
+        if: always()
+        run: |
+          mkdir -p _site/screenshots
+          cp preview/index.html _site/index.html
+          cp screenshots/*.png _site/screenshots/ 2>/dev/null || true
+          ls -l _site _site/screenshots
+
+      - name: Upload Pages artifact
+        if: always()
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: Deploy to GitHub Pages
+        if: always()
+        uses: actions/deploy-pages@v4
+        id: deploy
