@@ -15,15 +15,22 @@ import Foundation
 ///
 /// `https://api.aqr360.com/api/client/v1`. The `/api` segment is part of the
 /// path — omitting it returns 404. That was measured, not assumed.
-enum APIEnvironment {
+struct APIEnvironment: Sendable {
 
     /// Override for a future sandbox host. Currently unverified whether one
     /// exists; see API-FINDINGS §9.
-    static var baseURLOverride: URL?
+    ///
+    /// A `let`, not a `static var`, so there is no shared mutable state.
+    var baseURLOverride: URL?
 
-    static var baseURL: URL {
-        if let baseURLOverride { return baseURLOverride }
-        return URL(string: "https://api.aqr360.com/api/client/v1")!
+    init(baseURLOverride: URL? = nil) {
+        self.baseURLOverride = baseURLOverride
+    }
+
+    static let live = APIEnvironment()
+
+    var baseURL: URL {
+        baseURLOverride ?? URL(string: "https://api.aqr360.com/api/client/v1")!
     }
 }
 
@@ -33,7 +40,7 @@ enum APIEnvironment {
 /// { "data": …, "isSuccess": true, "errors": [],
 ///   "responseTime": "…", "responseStatus": 200 }
 /// ```
-struct APIEnvelope<Payload: Decodable>: Decodable {
+struct APIEnvelope<Payload: Decodable & Sendable>: Decodable, Sendable {
     let data: Payload
     let isSuccess: Bool
     let errors: [String]?
@@ -46,7 +53,7 @@ struct APIEnvelope<Payload: Decodable>: Decodable {
 /// Note from API-FINDINGS §4: a 401 carries an **empty body** with
 /// `WWW-Authenticate: Bearer`. There is no envelope to decode, so
 /// `.unauthenticated` must not attempt to parse one.
-enum AQRClientError: Error, Equatable {
+enum AQRClientError: Error, Equatable, Sendable {
     case badURL(String)
     case http(Int)
     case unauthenticated
@@ -63,43 +70,56 @@ enum AQRClientError: Error, Equatable {
     /// licence to add writes later.
     var isRetryable: Bool {
         switch self {
-        case .rateLimited, .transport: true
-        case .server: true
+        case .rateLimited, .transport, .server: true
         default: false
         }
     }
 }
 
+/// Reads one endpoint. Parameterised so implementations need not be actors and
+/// so any `Payload` crossing the boundary is required to be `Sendable`.
 protocol HTTPGet: Sendable {
-    func get<T: Decodable>(_ path: String, as type: T.Type) async throws -> T
+    func get<Payload: Decodable & Sendable>(_ path: String, as type: Payload.Type) async throws -> Payload
 }
 
-actor AQRClient: HTTPGet {
+/// Formats the server's ISO-8601 timestamps.
+///
+/// `ISO8601DateFormatter` is not `Sendable`, so instances are created per use
+/// rather than shared as statics. Cost is irrelevant next to a network round
+/// trip, and this keeps strict concurrency clean without suppression.
+enum AQRDates {
+
+    static func parse(_ raw: String) -> Date? {
+        let fractional = ISO8601DateFormatter()
+        fractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let date = fractional.date(from: raw) { return date }
+
+        let plain = ISO8601DateFormatter()
+        plain.formatOptions = [.withInternetDateTime]
+        return plain.date(from: raw)
+    }
+}
+
+/// Read-only HTTP client.
+///
+/// A `struct` rather than an `actor`: URLSession is already thread-safe and
+/// Sendable, so actor isolation bought nothing while forcing every payload
+/// across an isolation boundary.
+struct AQRClient: HTTPGet, Sendable {
 
     private let session: URLSession
-    private let decoder: JSONDecoder
+    private let environment: APIEnvironment
 
-    init(session: URLSession = .shared) {
+    init(session: URLSession = .shared, environment: APIEnvironment = .live) {
         self.session = session
-        // The API emits ISO-8601 with fractional seconds and a Z suffix.
-        let d = JSONDecoder()
-        d.dateDecodingStrategy = .custom { decoder in
-            let raw = try decoder.singleValueContainer().decode(String.self)
-            if let d = ISO8601DateFormatter.withFractional.date(from: raw) { return d }
-            if let d = ISO8601DateFormatter.plain.date(from: raw) { return d }
-            throw DecodingError.dataCorrupted(
-                .init(codingPath: decoder.codingPath,
-                      debugDescription: "Unrecognised ISO-8601 date: \(raw)"))
-        }
-        self.decoder = d
+        self.environment = environment
     }
 
-    func get<T: Decodable>(_ path: String, as type: T.Type) async throws -> T {
-        guard let url = URL(string: path, relativeTo: APIEnvironment.baseURL) else {
-            throw AQRClientError.badURL(path)
-        }
+    func get<Payload: Decodable & Sendable>(_ path: String, as type: Payload.Type) async throws -> Payload {
+        let url = Self.url(for: path, in: environment)
+        guard url != nil else { throw AQRClientError.badURL(path) }
 
-        var request = URLRequest(url: url)
+        var request = URLRequest(url: url!)
         request.httpMethod = "GET"
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         request.timeoutInterval = 20
@@ -124,31 +144,36 @@ actor AQRClient: HTTPGet {
         case 404:
             throw AQRClientError.notFound
         case 429:
-            let retryAfter = (http.value(forHTTPHeaderField: "Retry-After"))
-                .flatMap(TimeInterval.init)
-            throw AQRClientError.rateLimited(retryAfter: retryAfter)
+            throw AQRClientError.rateLimited(
+                retryAfter: http.value(forHTTPHeaderField: "Retry-After").flatMap(TimeInterval.init))
         default:
             throw AQRClientError.server(http.statusCode)
         }
 
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .custom { decoder in
+            let raw = try decoder.singleValueContainer().decode(String.self)
+            guard let date = AQRDates.parse(raw) else {
+                throw DecodingError.dataCorrupted(
+                    .init(codingPath: decoder.codingPath,
+                          debugDescription: "Unrecognised ISO-8601 date: \(raw)"))
+            }
+            return date
+        }
+
         do {
-            return try decoder.decode(T.self, from: data)
+            return try decoder.decode(Payload.self, from: data)
         } catch {
             throw AQRClientError.decoding(String(describing: error))
         }
     }
-}
 
-extension ISO8601DateFormatter {
-    static let withFractional: ISO8601DateFormatter = {
-        let f = ISO8601DateFormatter()
-        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return f
-    }()
-
-    static let plain: ISO8601DateFormatter = {
-        let f = ISO8601DateFormatter()
-        f.formatOptions = [.withInternetDateTime]
-        return f
-    }()
+    /// Built by concatenation rather than `URL(string:relativeTo:)`, which is
+    /// awkward when the base carries no trailing slash.
+    static func url(for path: String, in environment: APIEnvironment) -> URL? {
+        let base = environment.baseURL.absoluteString
+        let trimmedBase = base.hasSuffix("/") ? String(base.dropLast()) : base
+        let suffix = path.hasPrefix("/") ? String(path.dropFirst()) : path
+        return URL(string: "\(trimmedBase)/\(suffix)")
+    }
 }

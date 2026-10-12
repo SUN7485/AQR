@@ -113,7 +113,40 @@ struct APIEnvelopeTests {
 
     @Test("The base URL includes the /api segment that omitting returns 404 for")
     func baseURLIncludesAPISegment() {
-        let url = APIEnvironment.baseURL.absoluteString
-        #expect(url.hasSuffix("/api/client/v1"))
+        #expect(APIEnvironment.live.baseURL.absoluteString
+            .hasSuffix("/api/client/v1"))
+    }
+
+    @Test("Paths are appended to the base without doubling or dropping slashes")
+    func pathJoining() {
+        let env = APIEnvironment.live
+
+        let joined = AQRClient.url(for: "MetaLookup/countries", in: env)
+        #expect(joined?.absoluteString ==
+            "https://api.aqr360.com/api/client/v1/MetaLookup/countries")
+
+        // A leading slash must not produce a double slash.
+        let leading = AQRClient.url(for: "/MetaLookup/countries", in: env)
+        #expect(leading == joined)
+
+        // A sandbox override must be honoured rather than silently ignored.
+        let sandbox = APIEnvironment(baseURLOverride: URL(string: "https://sandbox.example/api/client/v1"))
+        #expect(AQRClient.url(for: "MetaLookup/countries", in: sandbox)?.absoluteString
+            == "https://sandbox.example/api/client/v1/MetaLookup/countries")
+    }
+
+    @Test("ISO-8601 parsing accepts both fractional and plain forms")
+    func dateParsing() {
+        let fractional = AQRDates.parse("2026-10-12T22:28:10.8514733Z")
+        let plain = AQRDates.parse("2026-10-12T22:28:10Z")
+
+        #expect(fractional != nil)
+        #expect(plain != nil)
+        #expect(AQRDates.parse("not a date") == nil)
+
+        // The two forms are ~852 ms apart, not the same instant.
+        if let fractional, let plain {
+            #expect(abs(fractional.timeIntervalSince(plain) - 0.852) < 0.01)
+        }
     }
 }

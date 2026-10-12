@@ -92,7 +92,7 @@ struct ServiceCategoryDTO: Codable, Identifiable, Hashable, Sendable {
 /// the element shape was never observed (API-FINDINGS §8). Decoding this will
 /// fail loudly if items ever arrive, which is correct: it must not silently
 /// produce empty results.
-struct ListingSearchPage<Item: Decodable>: Decodable {
+struct ListingSearchPage<Item: Decodable & Sendable>: Decodable, Sendable {
     let page: Int
     let pageSize: Int
     let totalCount: Int
